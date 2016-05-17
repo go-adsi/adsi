@@ -6,6 +6,9 @@ import (
 	"gopkg.in/adsi.v0/api"
 )
 
+// ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208
+// ADSI Objects of WinNT: https://msdn.microsoft.com/library/aa772211
+
 // Object provides access to Active Directory objects.
 type Object struct {
 	m     sync.RWMutex
