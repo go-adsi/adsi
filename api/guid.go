@@ -45,4 +45,10 @@ var (
 	//
 	// {DDF2891E-0F9C-11D0-8AD4-00C04FD8D503}
 	IID_IADsOpenDSObject = &ole.GUID{0xDDF2891E, 0x0F9C, 0x11D0, [8]byte{0x8A, 0xD4, 0x00, 0xC0, 0x4F, 0xD8, 0xD5, 0x03}}
+
+	// IID_IADsContainer is the component object model identifier of the
+	// IADsContainer class.
+	//
+	// {001677D0-FD16-11CE-ABC4-02608C9E7553}
+	IID_IADsContainer = &ole.GUID{0x001677D0, 0xFD16, 0x11CE, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
 )

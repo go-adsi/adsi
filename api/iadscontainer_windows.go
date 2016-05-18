@@ -13,7 +13,7 @@ import (
 // within the container.
 //
 // See https://msdn.microsoft.com/library/aa705990
-func (v *IADsContainer) NewEnum() (enum *ole.IEnumVARIANT, err error) {
+func (v *IADsContainer) NewEnum() (enum *ole.IUnknown, err error) {
 	hr, _, _ := syscall.Syscall(
 		uintptr(v.VTable().NewEnum),
 		2,

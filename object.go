@@ -2,6 +2,7 @@ package adsi
 
 import (
 	"sync"
+	"unsafe"
 
 	"gopkg.in/adsi.v0/api"
 )
@@ -148,6 +149,25 @@ func (o *Object) Schema() (path string, err error) {
 		if err != nil {
 			return err
 		}
+		return nil
+	})
+	return
+}
+
+// ToContainer attempts to acquire a container interface for the object.
+func (o *Object) ToContainer() (c *Container, err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		idispatch, err := o.iface.QueryInterface(api.IID_IADsContainer)
+		if err != nil {
+			return err
+		}
+		iface := (*api.IADsContainer)(unsafe.Pointer(idispatch))
+		c = &Container{iface: iface}
 		return nil
 	})
 	return
