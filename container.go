@@ -100,7 +100,8 @@ func (iter *ObjectIter) Next() (obj *Object, err error) {
 		if idispatch == nil {
 			return ErrNonDispatchVariant
 		}
-		defer idispatch.Release()
+		// Note: Do *not* call idispatch.Release() here, as it will be called
+		//       automatically by array.Clear()
 
 		iresult, err := idispatch.QueryInterface(api.IID_IADs)
 		if err != nil {
