@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comshim"
 )
 
 // DirectoryService provides access to Active Directory Service Interfaces for
@@ -21,11 +22,13 @@ type DirectoryService struct {
 // otherwise the returned directory service will be nil and error will be
 // non-nil.
 func NewDirectoryService(server string) (*DirectoryService, error) {
+	comshim.Add(1)
 	ds := &DirectoryService{}
 	err := run(func() error {
 		return ds.init(server)
 	})
 	if err != nil {
+		comshim.Done()
 		return nil, err
 	}
 	// TODO: Add finalizer for ds?
@@ -49,6 +52,7 @@ func (ds *DirectoryService) Close() {
 	if ds.closed() {
 		return
 	}
+	defer comshim.Done()
 	run(func() error {
 		ds.iface.Release()
 		return nil
@@ -151,6 +155,6 @@ func (ds *DirectoryService) OpenObject(path, user, password string, flags uint32
 		return nil, err
 	}
 	iface := (*api.IADs)(unsafe.Pointer(idispatch))
-	obj = &Object{iface: iface}
+	obj = NewObject(iface)
 	return
 }

@@ -5,6 +5,7 @@ import (
 	"unsafe"
 
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comshim"
 )
 
 // ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208
@@ -14,6 +15,12 @@ import (
 type Object struct {
 	m     sync.RWMutex
 	iface *api.IADs
+}
+
+// NewObject returns an object that manages the given COM interface.
+func NewObject(iface *api.IADs) *Object {
+	comshim.Add(1)
+	return &Object{iface: iface}
 }
 
 /*
@@ -42,6 +49,7 @@ func (o *Object) Close() {
 	if o.closed() {
 		return
 	}
+	defer comshim.Done()
 	run(func() error {
 		o.iface.Release()
 		return nil

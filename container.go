@@ -7,12 +7,19 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comshim"
 )
 
 // Container provides access to Active Directory container objects.
 type Container struct {
 	m     sync.RWMutex
 	iface *api.IADsContainer
+}
+
+// NewContainer returns a container that manages the given COM interface.
+func NewContainer(iface *api.IADsContainer) *Container {
+	comshim.Add(1)
+	return &Container{iface: iface}
 }
 
 func (c *Container) closed() bool {
@@ -27,6 +34,7 @@ func (c *Container) Close() {
 	if c.closed() {
 		return
 	}
+	defer comshim.Done()
 	run(func() error {
 		c.iface.Release()
 		return nil
@@ -69,7 +77,7 @@ type ObjectIter struct {
 // NewObjectIter returns an object iterator that provides access to the objects
 // contained in the given enumerator.
 func NewObjectIter(enumerator *ole.IEnumVARIANT) *ObjectIter {
-	// TODO: Call ADsBuildEnumerator here?
+	comshim.Add(1)
 	return &ObjectIter{iface: enumerator}
 }
 
@@ -108,7 +116,7 @@ func (iter *ObjectIter) Next() (obj *Object, err error) {
 			return err
 		}
 		iface := (*api.IADs)(unsafe.Pointer(iresult))
-		obj = &Object{iface: iface}
+		obj = NewObject(iface)
 		return nil
 	})
 	return
@@ -126,6 +134,7 @@ func (iter *ObjectIter) Close() {
 	if iter.closed() {
 		return
 	}
+	defer comshim.Done()
 	run(func() error {
 		iter.iface.Release()
 		return nil
