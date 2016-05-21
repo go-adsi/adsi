@@ -22,7 +22,7 @@ func run(a action) error {
 
 	// Initialize COM with a multithreaded compartment.
 	// See: https://msdn.microsoft.com/en-us/library/ms809971
-	if err := ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED); err != nil {
+	if err := ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED|ole.COINIT_DISABLE_OLE1DDE); err != nil {
 		oleerr := err.(*ole.OleError)
 		// S_FALSE           = 0x00000001 // CoInitializeEx was already called on this thread
 		if oleerr.Code() != ole.S_OK && oleerr.Code() != 0x00000001 {
