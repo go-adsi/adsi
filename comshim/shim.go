@@ -24,7 +24,7 @@ type Shim struct {
 	running bool
 }
 
-// New returns a new shim for keeping component object model resource allocated
+// New returns a new shim for keeping component object model resources allocated
 // within a process.
 func New() *Shim {
 	shim := new(Shim)
