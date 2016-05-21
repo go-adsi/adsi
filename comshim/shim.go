@@ -14,8 +14,9 @@ import (
 // initialized connection to COM, and thus prevents COM resources from being
 // unloaded from that process.
 //
-// Control is implemented through the use of a counter similar to a waitgroup,
-// as long as the counter is greater than zero then
+// Control is implemented through the use of a counter similar to a waitgroup.
+// As long as the counter is greater than zero then the goroutine will remain
+// in a blocked condition with its COM connection intact.
 type Shim struct {
 	m       sync.RWMutex
 	cond    sync.Cond
