@@ -21,9 +21,8 @@ func main() {
 
 	var domain = flag.Arg(0)
 
-	shim := comshim.New()
-	shim.Add(1)
-	defer shim.Done()
+	comshim.Add(1)
+	defer comshim.Done()
 
 	url := rootURL(domain)
 	root := prepareRoot(url)
