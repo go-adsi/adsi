@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"strings"
-
-	"github.com/go-ole/go-ole"
 
 	"gopkg.in/adsi.v0"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comshim"
 )
 
 func main() {
@@ -23,12 +21,11 @@ func main() {
 
 	var domain = flag.Arg(0)
 
-	stop := make(chan struct{})
-
-	go comShim(stop)
+	shim := comshim.New()
+	shim.Add(1)
+	defer shim.Done()
 
 	url := rootURL(domain)
-
 	root := prepareRoot(url)
 	defer root.Close()
 
@@ -39,10 +36,6 @@ func main() {
 	for i := 0; i < len(rglist); i++ {
 		log.Printf("[%4d] %v\n", i, rglist[i])
 	}
-
-	root.Close()
-
-	close(stop)
 }
 
 func prepareRoot(url string) *adsi.Object {
@@ -142,23 +135,4 @@ func rootURL(domain string) string {
 	dn := makeDN("dc", strings.Split(domain, ".")...)
 	protocol := "LDAP"
 	return protocol + "://" + dn
-}
-
-func comShim(until chan struct{}) error {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
-	if err := ole.CoInitializeEx(0, ole.COINIT_MULTITHREADED); err != nil {
-		oleerr := err.(*ole.OleError)
-		// S_FALSE           = 0x00000001 // CoInitializeEx was already called on this thread
-		if oleerr.Code() != ole.S_OK && oleerr.Code() != 0x00000001 {
-			return err
-		}
-	}
-
-	defer ole.CoUninitialize()
-
-	<-until
-
-	return nil
 }
