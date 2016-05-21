@@ -76,6 +76,9 @@ func (s *Shim) Done() {
 
 func (s *Shim) add(delta int) {
 	value := s.c.Add(int64(delta))
+	if value == 0 {
+		s.cond.Broadcast()
+	}
 	if value < 0 {
 		panic(errors.New("Component object model shim counter has dropped zero."))
 	}
