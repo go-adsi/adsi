@@ -71,7 +71,7 @@ func (s *Shim) Add(delta int) {
 
 // Done decrements the counter for the shim.
 func (s *Shim) Done() {
-	s.c.Add(-1)
+	s.add(-1)
 }
 
 func (s *Shim) add(delta int) {
