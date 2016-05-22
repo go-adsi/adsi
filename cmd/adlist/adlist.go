@@ -9,7 +9,6 @@ import (
 
 	"gopkg.in/adsi.v0"
 	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comshim"
 )
 
 func main() {
@@ -20,9 +19,6 @@ func main() {
 	}
 
 	var domain = flag.Arg(0)
-
-	comshim.Add(1)
-	defer comshim.Done()
 
 	url := rootURL(domain)
 	root := prepareRoot(url)
