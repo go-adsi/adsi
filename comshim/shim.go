@@ -1,7 +1,6 @@
 package comshim
 
 import (
-	"errors"
 	"runtime"
 	"sync"
 
@@ -80,7 +79,7 @@ func (s *Shim) add(delta int) {
 		s.cond.Broadcast()
 	}
 	if value < 0 {
-		panic(errors.New("Component object model shim counter has dropped zero."))
+		panic(ErrNegativeCounter)
 	}
 }
 
