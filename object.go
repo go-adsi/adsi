@@ -175,7 +175,7 @@ func (o *Object) ToContainer() (c *Container, err error) {
 			return err
 		}
 		iface := (*api.IADsContainer)(unsafe.Pointer(idispatch))
-		c = &Container{iface: iface}
+		c = NewContainer(iface)
 		return nil
 	})
 	return
