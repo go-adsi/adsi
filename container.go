@@ -6,8 +6,8 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/scjalliance/comshim"
 	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comshim"
 )
 
 // Container provides access to Active Directory container objects.

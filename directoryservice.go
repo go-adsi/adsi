@@ -5,8 +5,8 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/scjalliance/comshim"
 	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comshim"
 )
 
 // DirectoryService provides access to Active Directory Service Interfaces for

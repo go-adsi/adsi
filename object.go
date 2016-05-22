@@ -4,8 +4,8 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/scjalliance/comshim"
 	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comshim"
 )
 
 // ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208
