@@ -11,3 +11,9 @@ import "github.com/go-ole/go-ole"
 func (v *IADsContainer) NewEnum() (enum *ole.IEnumVARIANT, err error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
 }
+
+// NewIADsContainer returns a new instance of the IADsContainer
+// component object model interface.
+func NewIADsContainer(server string, clsid *ole.GUID) (*IADsContainer, error) {
+	return nil, ole.NewError(ole.E_NOTIMPL)
+}

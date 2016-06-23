@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/scjalliance/comutil"
 )
 
 // NewEnum retrieves an enumerator interface that provides access to the objects
@@ -24,4 +25,11 @@ func (v *IADsContainer) NewEnum() (enum *ole.IUnknown, err error) {
 		return nil, convertHresultToError(hr)
 	}
 	return
+}
+
+// NewIADsContainer returns a new instance of the IADsContainer
+// component object model interface.
+func NewIADsContainer(server string, clsid *ole.GUID) (*IADsContainer, error) {
+	p, err := comutil.CreateRemoteObject(server, clsid, IID_IADsContainer)
+	return (*IADsContainer)(unsafe.Pointer(p)), err
 }
