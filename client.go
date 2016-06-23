@@ -19,33 +19,43 @@ type namespace struct {
 	Err     error
 }
 
-// DirectoryService provides access to Active Directory Service Interfaces for
-// a namespace.
-type DirectoryService struct {
+// Client provides access to Active Directory Service Interfaces for
+// any namespace supported by a local or remote COM server.
+type Client struct {
 	m sync.RWMutex
 	n []namespace
 }
 
-// NewDirectoryService creates a new directory service. When done with a
-// directory service it should be closed with a call to Close(). If New is
-// successful it will return a directory service and error will be nil,
-// otherwise the returned directory service will be nil and error will be
-// non-nil.
-func NewDirectoryService(server string) (*DirectoryService, error) {
+// NewClient creates a new ADSI client. When done with a client it should be
+// closed with a call to Close(). If NewClient is successful it will return a
+// client and error will be nil, otherwise the returned client will be nil and
+// error will be non-nil.
+func NewClient() (*Client, error) {
+	return NewRemoteClient("")
+}
+
+// NewRemoteClient creates a new ADSI client on a remote server. When done with
+// a client it should be closed with a call to Close(). If NewClient is
+// successful it will return a client and error will be nil, otherwise the
+// returned client will be nil and error will be non-nil.
+//
+// If no server is provided a local client is created instead and the
+// resulting behavior is identical to NewClient.
+func NewRemoteClient(server string) (*Client, error) {
 	comshim.Add(1)
-	ds := &DirectoryService{}
+	c := &Client{}
 	err := run(func() error {
-		return ds.init(server)
+		return c.init(server)
 	})
 	if err != nil {
 		comshim.Done()
 		return nil, err
 	}
 	// TODO: Add finalizer for ds?
-	return ds, nil
+	return c, nil
 }
 
-func (ds *DirectoryService) init(server string) (err error) {
+func (c *Client) init(server string) (err error) {
 	// Acquiring a container for the CLSID_ADsNamespaces class gives us access to
 	// an enumeration of all of the available namespaces.
 	iface, err := api.NewIADsContainer(server, api.CLSID_ADsNamespaces)
@@ -62,14 +72,14 @@ func (ds *DirectoryService) init(server string) (err error) {
 	}
 	defer iter.Close()
 
-	ds.n = make([]namespace, 0, 12)
+	c.n = make([]namespace, 0, 12)
 
 	for child, iterErr := iter.Next(); iterErr == nil; child, iterErr = iter.Next() {
 		defer child.Close()
 
 		// Add the entry and whip up a pointer to it
-		ds.n = append(ds.n, namespace{})
-		item := &ds.n[len(ds.n)-1]
+		c.n = append(c.n, namespace{})
+		item := &c.n[len(c.n)-1]
 
 		// Name
 		item.Name, item.Err = child.Name()
@@ -105,28 +115,28 @@ func (ds *DirectoryService) init(server string) (err error) {
 	return
 }
 
-func (ds *DirectoryService) closed() bool {
-	return (ds.n == nil)
+func (c *Client) closed() bool {
+	return (c.n == nil)
 }
 
-// Close will release resources consumed by the directory service. It should be
-// called when the directory service is no longer needed.
-func (ds *DirectoryService) Close() {
-	ds.m.Lock()
-	defer ds.m.Unlock()
-	if ds.closed() {
+// Close will release resources consumed by the client. It should be called
+// when the client is no longer needed.
+func (c *Client) Close() {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
 		return
 	}
 	defer comshim.Done()
 	run(func() error {
-		for i := 0; i < len(ds.n); i++ {
-			if ds.n[i].Iface != nil {
-				ds.n[i].Iface.Release()
+		for i := 0; i < len(c.n); i++ {
+			if c.n[i].Iface != nil {
+				c.n[i].Iface.Release()
 			}
 		}
 		return nil
 	})
-	ds.n = nil
+	c.n = nil
 }
 
 // Open opens a directory object with the given path. When provided, the
@@ -146,14 +156,14 @@ func (ds *DirectoryService) Close() {
 // The returned interface consumes resources until it is released. It is the
 // caller's responsibilty to call Release on the returned object when it is no
 // longer needed.
-func (ds *DirectoryService) Open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
-	ds.m.Lock()
-	defer ds.m.Unlock()
-	if ds.closed() {
+func (c *Client) Open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
 		return nil, ErrClosed
 	}
 	err = run(func() error {
-		obj, err = ds.open(path, user, password, flags)
+		obj, err = c.open(path, user, password, flags)
 		if err != nil {
 			return err
 		}
@@ -179,14 +189,14 @@ func (ds *DirectoryService) Open(path, user, password string, flags uint32) (obj
 // The returned interface consumes resources until it is released. It is the
 // caller's responsibilty to call Release on the returned object when it is no
 // longer needed.
-func (ds *DirectoryService) OpenInterface(path, user, password string, flags uint32, iid *ole.GUID) (obj *ole.IDispatch, err error) {
-	ds.m.Lock()
-	defer ds.m.Unlock()
-	if ds.closed() {
+func (c *Client) OpenInterface(path, user, password string, flags uint32, iid *ole.GUID) (obj *ole.IDispatch, err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
 		return nil, ErrClosed
 	}
 	err = run(func() error {
-		idispatch, err := ds.open(path, user, password, flags)
+		idispatch, err := c.open(path, user, password, flags)
 		if err != nil {
 			return err
 		}
@@ -217,8 +227,8 @@ func (ds *DirectoryService) OpenInterface(path, user, password string, flags uin
 // The returned object consumes resources until it is closed. It is the
 // caller's responsibilty to call Close on the returned object when it is no
 // longer needed.
-func (ds *DirectoryService) OpenObject(path, user, password string, flags uint32) (obj *Object, err error) {
-	idispatch, err := ds.OpenInterface(path, user, password, flags, api.IID_IADs)
+func (c *Client) OpenObject(path, user, password string, flags uint32) (obj *Object, err error) {
+	idispatch, err := c.OpenInterface(path, user, password, flags, api.IID_IADs)
 	if err != nil {
 		return nil, err
 	}
@@ -227,13 +237,13 @@ func (ds *DirectoryService) OpenObject(path, user, password string, flags uint32
 	return
 }
 
-func (ds *DirectoryService) open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
+func (c *Client) open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
 	p, err := adspath.Parse(path)
 	if err != nil {
 		return
 	}
 
-	ns := ds.namespace(p.Scheme)
+	ns := c.namespace(p.Scheme)
 	if ns == nil {
 		return nil, api.ErrInvalidNamespace
 	}
@@ -249,10 +259,10 @@ func (ds *DirectoryService) open(path, user, password string, flags uint32) (obj
 // no namespace has been registered with that name then nil is returend.
 //
 // The name matching is case-sensitive.
-func (ds *DirectoryService) namespace(name string) *namespace {
-	for i := 0; i < len(ds.n); i++ {
-		if ds.n[i].Name == name {
-			return &ds.n[i]
+func (c *Client) namespace(name string) *namespace {
+	for i := 0; i < len(c.n); i++ {
+		if c.n[i].Name == name {
+			return &c.n[i]
 		}
 	}
 	return nil

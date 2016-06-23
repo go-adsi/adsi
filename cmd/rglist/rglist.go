@@ -34,13 +34,13 @@ func main() {
 }
 
 func prepareObject(url string) *adsi.Object {
-	ds, err := adsi.NewDirectoryService("")
+	c, err := adsi.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer ds.Close()
+	defer c.Close()
 
-	obj, err := ds.OpenObject(url, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
+	obj, err := c.OpenObject(url, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
 	if err != nil {
 		log.Fatal(err)
 	}
