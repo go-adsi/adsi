@@ -5,6 +5,7 @@ import (
 )
 
 // See: https://github.com/blueardour/pxe-server/blob/master/0.winxp-drivers-via-binlsrv/inf/activeds.inf
+// See: https://msdn.microsoft.com/library/aa746443
 
 var (
 	// {228D9A81-C302-11CF-9AA4-00AA004A5691}
@@ -12,6 +13,9 @@ var (
 
 	// {228D9A82-C302-11CF-9AA4-00AA004A5691}
 	CLSID_LDAPNamespace = &ole.GUID{0x228D9A82, 0xC302, 0x11CF, [8]byte{0x9A, 0xA4, 0x00, 0xAA, 0x00, 0x4A, 0x56, 0x91}}
+
+	// {8B20CD60-0F29-11CF-ABC4-02608C9E7553}
+	CLSID_WinNT = &ole.GUID{0x8B20CD60, 0x0F29, 0x11CF, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
 
 	// {250E91A0-0367-11CF-ABC4-02608C9E7553}
 	CLSID_WinNTNamespace = &ole.GUID{0x250E91A0, 0x0367, 0x11CF, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
@@ -35,19 +39,25 @@ var (
 	CLSID_ADsOLEDB = &ole.GUID{0xE0FA581D, 0x2188, 0x11D2, [8]byte{0xA7, 0x39, 0x00, 0xC0, 0x4F, 0xA3, 0x77, 0xA1}}
 
 	// IID_IADs is the component object model identifier of the
-	// IADs class.
+	// IADs interface.
 	//
 	// {FD8256D0-FD15-11CE-ABC4-02608C9E7553}
 	IID_IADs = &ole.GUID{0xFD8256D0, 0xFD15, 0x11CE, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
 
+	// IID_IADsNamespaces is the component object model identifier of the
+	// IADsNamespaces interface.
+	//
+	// {28B96BA0-B330-11CF-A9AD-00AA006BC149}
+	IID_IADsNamespaces = &ole.GUID{0x28B96BA0, 0xB330, 0x11CF, [8]byte{0xA9, 0xAD, 0x00, 0xAA, 0x00, 0x6B, 0xC1, 0x49}}
+
 	// IID_IADsOpenDSObject is the component object model identifier of the
-	// IADsOpenDSObject class.
+	// IADsOpenDSObject interface.
 	//
 	// {DDF2891E-0F9C-11D0-8AD4-00C04FD8D503}
 	IID_IADsOpenDSObject = &ole.GUID{0xDDF2891E, 0x0F9C, 0x11D0, [8]byte{0x8A, 0xD4, 0x00, 0xC0, 0x4F, 0xD8, 0xD5, 0x03}}
 
 	// IID_IADsContainer is the component object model identifier of the
-	// IADsContainer class.
+	// IADsContainer interface.
 	//
 	// {001677D0-FD16-11CE-ABC4-02608C9E7553}
 	IID_IADsContainer = &ole.GUID{0x001677D0, 0xFD16, 0x11CE, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
