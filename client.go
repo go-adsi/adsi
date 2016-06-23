@@ -139,7 +139,34 @@ func (c *Client) Close() {
 	c.n = nil
 }
 
-// Open opens a directory object with the given path. When provided, the
+// Open opens an ADSI object with the given path. When provided, the
+// username and password are used to establish a security context for the
+// connection. When credentials are not provided the existing security
+// context of the application is used instead.
+//
+// Open returns the ADSI object as an Object type, which provides
+// an idiomatic go wrapper around the underlying component object model
+// IADs interface.
+//
+// Open calls QueryInterface internally to acquire an implementation of
+// the IADs interface that is needed by the Object type. If the returned
+// directory object does not implement the IADs interface an error is
+// returned.
+//
+// The returned object consumes resources until it is closed. It is the
+// caller's responsibilty to call Close on the returned object when it is no
+// longer needed.
+func (c *Client) Open(path, user, password string, flags uint32) (obj *Object, err error) {
+	idispatch, err := c.OpenInterface(path, user, password, flags, api.IID_IADs)
+	if err != nil {
+		return nil, err
+	}
+	iface := (*api.IADs)(unsafe.Pointer(idispatch))
+	obj = NewObject(iface)
+	return
+}
+
+// OpenDispatch opens an ADSI object with the given path. When provided, the
 // username and password are used to establish a security context for the
 // connection. When credentials are not provided the existing security
 // context of the application is used instead.
@@ -156,7 +183,7 @@ func (c *Client) Close() {
 // The returned interface consumes resources until it is released. It is the
 // caller's responsibilty to call Release on the returned object when it is no
 // longer needed.
-func (c *Client) Open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
+func (c *Client) OpenDispatch(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if c.closed() {
@@ -207,33 +234,6 @@ func (c *Client) OpenInterface(path, user, password string, flags uint32, iid *o
 		}
 		return nil
 	})
-	return
-}
-
-// OpenObject opens a directory object with the given path. When provided,
-// the username and password are used to establish a security context for the
-// connection. When credentials are not provided the existing security
-// context of the application is used instead.
-//
-// OpenObject returns the directory object as an Object type, which provides
-// an idiomatic go wrapper around the underlying component object model
-// interface.
-//
-// OpenObject calls QueryInterface internally to acquire an implementation of
-// the IADs interface that is needed by the Object type. If the returned
-// directory object does not implement the IADs interface an error is
-// returned.
-//
-// The returned object consumes resources until it is closed. It is the
-// caller's responsibilty to call Close on the returned object when it is no
-// longer needed.
-func (c *Client) OpenObject(path, user, password string, flags uint32) (obj *Object, err error) {
-	idispatch, err := c.OpenInterface(path, user, password, flags, api.IID_IADs)
-	if err != nil {
-		return nil, err
-	}
-	iface := (*api.IADs)(unsafe.Pointer(idispatch))
-	obj = NewObject(iface)
 	return
 }
 

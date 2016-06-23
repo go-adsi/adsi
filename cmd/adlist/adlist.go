@@ -20,8 +20,8 @@ func main() {
 
 	var domain = flag.Arg(0)
 
-	url := rootURL(domain)
-	root := prepareRoot(url)
+	path := rootPath(domain)
+	root := prepareRoot(path)
 	defer root.Close()
 
 	rglist, err := fetchChildren(root, 0)
@@ -33,14 +33,14 @@ func main() {
 	}
 }
 
-func prepareRoot(url string) *adsi.Object {
+func prepareRoot(path string) *adsi.Object {
 	c, err := adsi.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
-	obj, err := c.OpenObject(url, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
+	obj, err := c.Open(path, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func makeDN(attribute string, components ...string) string {
 	return strings.Join(components, ",")
 }
 
-func rootURL(domain string) string {
+func rootPath(domain string) string {
 	dn := makeDN("dc", strings.Split(domain, ".")...)
 	protocol := "LDAP"
 	return protocol + "://" + dn

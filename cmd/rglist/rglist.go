@@ -20,8 +20,8 @@ func main() {
 
 	var domain = flag.Arg(0)
 
-	url := dfsrURL(domain)
-	root := prepareObject(url)
+	path := dfsrPath(domain)
+	root := prepareObject(path)
 	defer root.Close()
 
 	rglist, err := fetchChildren(root)
@@ -33,14 +33,14 @@ func main() {
 	}
 }
 
-func prepareObject(url string) *adsi.Object {
+func prepareObject(path string) *adsi.Object {
 	c, err := adsi.NewClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
-	obj, err := c.OpenObject(url, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
+	obj, err := c.Open(path, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +106,7 @@ func makeDN(attribute string, components ...string) string {
 	return strings.Join(components, ",")
 }
 
-func dfsrURL(domain string) string {
+func dfsrPath(domain string) string {
 	cn := makeDN("cn", "DFSR-GlobalSettings", "System")
 	dc := makeDN("dc", strings.Split(domain, ".")...)
 	dn := strings.Join([]string{cn, dc}, ",")
