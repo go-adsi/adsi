@@ -1,19 +1,29 @@
 package adsi
 
 import (
+	"strings"
 	"sync"
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
+	"github.com/scjalliance/comutil"
+	"gopkg.in/adsi.v0/adspath"
 	"gopkg.in/adsi.v0/api"
 )
+
+type namespace struct {
+	Name    string
+	ClassID *ole.GUID
+	Iface   *api.IADsOpenDSObject
+	Err     error
+}
 
 // DirectoryService provides access to Active Directory Service Interfaces for
 // a namespace.
 type DirectoryService struct {
-	m     sync.RWMutex
-	iface *api.IADsOpenDSObject
+	m sync.RWMutex
+	n []namespace
 }
 
 // NewDirectoryService creates a new directory service. When done with a
@@ -36,12 +46,67 @@ func NewDirectoryService(server string) (*DirectoryService, error) {
 }
 
 func (ds *DirectoryService) init(server string) (err error) {
-	ds.iface, err = api.NewIADsOpenDSObject(server)
+	// Acquiring a container for the CLSID_ADsNamespaces class gives us access to
+	// an enumeration of all of the available namespaces.
+	iface, err := api.NewIADsContainer(server, api.CLSID_ADsNamespaces)
+	if err != nil {
+		return err
+	}
+
+	root := NewContainer(iface)
+	defer root.Close()
+
+	iter, err := root.Children()
+	if err != nil {
+		return err
+	}
+	defer iter.Close()
+
+	ds.n = make([]namespace, 0, 12)
+
+	for child, iterErr := iter.Next(); iterErr == nil; child, iterErr = iter.Next() {
+		defer child.Close()
+
+		// Add the entry and whip up a pointer to it
+		ds.n = append(ds.n, namespace{})
+		item := &ds.n[len(ds.n)-1]
+
+		// Name
+		item.Name, item.Err = child.Name()
+		if item.Err != nil {
+			continue
+		}
+		item.Name = strings.TrimRight(item.Name, ":")
+
+		// GUID
+		var guid string
+		guid, item.Err = child.GUID()
+		if item.Err != nil {
+			continue
+		}
+
+		item.ClassID, item.Err = comutil.IIDFromString(guid)
+		if item.Err != nil {
+			continue
+		}
+
+		// Interface
+		var idisp *ole.IDispatch
+		idisp, item.Err = child.iface.QueryInterface(api.IID_IADsOpenDSObject)
+		if item.Err != nil {
+			continue
+		}
+		item.Iface = (*api.IADsOpenDSObject)(unsafe.Pointer(idisp))
+	}
+
+	// TODO: Check the value of iterErr to see if it returned something other than
+	//       io.EOF.
+
 	return
 }
 
 func (ds *DirectoryService) closed() bool {
-	return (ds.iface == nil)
+	return (ds.n == nil)
 }
 
 // Close will release resources consumed by the directory service. It should be
@@ -54,11 +119,14 @@ func (ds *DirectoryService) Close() {
 	}
 	defer comshim.Done()
 	run(func() error {
-		ds.iface.Release()
+		for i := 0; i < len(ds.n); i++ {
+			if ds.n[i].Iface != nil {
+				ds.n[i].Iface.Release()
+			}
+		}
 		return nil
 	})
-	// FIXME: What happens if the run returns an error?
-	ds.iface = nil
+	ds.n = nil
 }
 
 // Open opens a directory object with the given path. When provided, the
@@ -85,7 +153,7 @@ func (ds *DirectoryService) Open(path, user, password string, flags uint32) (obj
 		return nil, ErrClosed
 	}
 	err = run(func() error {
-		obj, err = ds.iface.OpenDSObject(path, user, password, flags)
+		obj, err = ds.open(path, user, password, flags)
 		if err != nil {
 			return err
 		}
@@ -118,7 +186,7 @@ func (ds *DirectoryService) OpenInterface(path, user, password string, flags uin
 		return nil, ErrClosed
 	}
 	err = run(func() error {
-		idispatch, err := ds.iface.OpenDSObject(path, user, password, flags)
+		idispatch, err := ds.open(path, user, password, flags)
 		if err != nil {
 			return err
 		}
@@ -157,4 +225,35 @@ func (ds *DirectoryService) OpenObject(path, user, password string, flags uint32
 	iface := (*api.IADs)(unsafe.Pointer(idispatch))
 	obj = NewObject(iface)
 	return
+}
+
+func (ds *DirectoryService) open(path, user, password string, flags uint32) (obj *ole.IDispatch, err error) {
+	p, err := adspath.Parse(path)
+	if err != nil {
+		return
+	}
+
+	ns := ds.namespace(p.Scheme)
+	if ns == nil {
+		return nil, api.ErrInvalidNamespace
+	}
+	if ns.Err != nil {
+		return nil, ns.Err
+	}
+
+	obj, err = ns.Iface.OpenDSObject(path, user, password, flags)
+	return
+}
+
+// namespace returns information about the namespace with the given name. If
+// no namespace has been registered with that name then nil is returend.
+//
+// The name matching is case-sensitive.
+func (ds *DirectoryService) namespace(name string) *namespace {
+	for i := 0; i < len(ds.n); i++ {
+		if ds.n[i].Name == name {
+			return &ds.n[i]
+		}
+	}
+	return nil
 }
