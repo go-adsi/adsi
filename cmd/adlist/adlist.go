@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"gopkg.in/adsi.v0"
-	"gopkg.in/adsi.v0/api"
 )
 
 func main() {
@@ -20,32 +19,19 @@ func main() {
 
 	var domain = flag.Arg(0)
 
-	path := rootPath(domain)
-	root := prepareRoot(path)
+	root, err := adsi.Open(domainPath(domain))
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer root.Close()
 
-	rglist, err := fetchChildren(root, 0)
+	adlist, err := fetchChildren(root, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for i := 0; i < len(rglist); i++ {
-		log.Printf("[%4d] %v\n", i, rglist[i])
+	for i := 0; i < len(adlist); i++ {
+		log.Printf("[%4d] %v\n", i, adlist[i])
 	}
-}
-
-func prepareRoot(path string) *adsi.Object {
-	c, err := adsi.NewClient()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer c.Close()
-
-	obj, err := c.Open(path, "", "", api.ADS_READONLY_SERVER|api.ADS_SECURE_AUTHENTICATION|api.ADS_USE_SEALING)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return obj
 }
 
 func fetchChildren(parent *adsi.Object, depth int) (groups []string, err error) {
@@ -93,28 +79,16 @@ func fetchChildren(parent *adsi.Object, depth int) (groups []string, err error) 
 
 		groups = append(groups, sub...)
 
-		//show(child, fmt.Sprintf("%v: ", i))
 		i++
 	}
 
 	return
 }
 
-func show(obj *adsi.Object, prefix string) {
-	name, _ := obj.Name()
-	class, _ := obj.Class()
-	guid, _ := obj.GUID()
-	path, _ := obj.Path()
-	parent, _ := obj.Parent()
-	schema, _ := obj.Schema()
-
-	log.Println("--------")
-	log.Printf("%sName: %v\n", prefix, name)
-	log.Printf("%sClass: %v\n", prefix, class)
-	log.Printf("%sGUID: %v\n", prefix, guid)
-	log.Printf("%sPath: %v\n", prefix, path)
-	log.Printf("%sParent: %v\n", prefix, parent)
-	log.Printf("%sSchema: %v\n", prefix, schema)
+func domainPath(domain string) string {
+	dn := makeDN("dc", strings.Split(domain, ".")...)
+	protocol := "LDAP"
+	return protocol + "://" + dn
 }
 
 func makeDN(attribute string, components ...string) string {
@@ -124,10 +98,4 @@ func makeDN(attribute string, components ...string) string {
 		}
 	}
 	return strings.Join(components, ",")
-}
-
-func rootPath(domain string) string {
-	dn := makeDN("dc", strings.Split(domain, ".")...)
-	protocol := "LDAP"
-	return protocol + "://" + dn
 }
