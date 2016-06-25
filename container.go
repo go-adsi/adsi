@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
+	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/api"
 )
 
@@ -64,6 +65,42 @@ func (c *Container) Children() (iter *ObjectIter, err error) {
 		iface := (*ole.IEnumVARIANT)(unsafe.Pointer(idispatch))
 		iter = NewObjectIter(iface)
 		return nil
+	})
+	return
+}
+
+// Filter returns the current filter of the container.
+func (c *Container) Filter() (filter []string, err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		variant, err := c.iface.Filter()
+		if err != nil {
+			return err
+		}
+		defer variant.Clear()
+		filter = variant.ToArray().ToStringArray()
+		return nil
+	})
+	return
+}
+
+// SetFilter set the filter for the container.
+func (c *Container) SetFilter(filter ...string) (err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
+		return ErrClosed
+	}
+	err = run(func() error {
+		safeByteArray := comutil.SafeArrayFromStringSlice(filter)
+		variant := ole.NewVariant(ole.VT_ARRAY|ole.VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
+		v := &variant
+		defer v.Clear()
+		return c.iface.SetFilter(v)
 	})
 	return
 }
