@@ -13,4 +13,8 @@ var (
 	// members of an IEnumVARIANT in an attempt to convert them into an expected
 	// type.
 	ErrNonDispatchVariant = errors.New("Object iterator unexpectedly yielded non-dispatch variant.")
+
+	// ErrInvalidGUID is returned when a given value cannot be interpreted as
+	// a globally unique identifier.
+	ErrInvalidGUID = errors.New("Invalid GUID.")
 )

@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
-	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/adspath"
 	"gopkg.in/adsi.v0/api"
 )
@@ -89,13 +88,7 @@ func (c *Client) init(server string) (err error) {
 		item.Name = strings.TrimRight(item.Name, ":")
 
 		// GUID
-		var guid string
-		guid, item.Err = child.GUID()
-		if item.Err != nil {
-			continue
-		}
-
-		item.ClassID, item.Err = comutil.IIDFromString(guid)
+		item.ClassID, item.Err = child.GUID()
 		if item.Err != nil {
 			continue
 		}

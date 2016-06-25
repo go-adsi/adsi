@@ -61,4 +61,16 @@ var (
 	//
 	// {001677D0-FD16-11CE-ABC4-02608C9E7553}
 	IID_IADsContainer = &ole.GUID{0x001677D0, 0xFD16, 0x11CE, [8]byte{0xAB, 0xC4, 0x02, 0x60, 0x8C, 0x9E, 0x75, 0x53}}
+
+	// IID_IADsComputer is the component object model identifier of the
+	// IADsComputer interface.
+	IID_IADsComputer = ole.NewGUID("{EFE3CC70-1D9F-11CF-B1F3-02608C9E7553}")
+
+	// IID_IADsGroup is the component object model identifier of the
+	// IADsGroup interface.
+	IID_IADsGroup = ole.NewGUID("{27636B00-410F-11CF-B1FF-02608C9E7553}")
+
+	// IID_IADsMembers is the component object model identifier of the
+	// IADsMembers interface.
+	IID_IADsMembers = ole.NewGUID("{451A0030-72EC-11CF-B03B-00AA006E0975}")
 )

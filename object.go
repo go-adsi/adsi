@@ -4,6 +4,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
 	"gopkg.in/adsi.v0/api"
 )
@@ -93,18 +94,24 @@ func (o *Object) Class() (class string, err error) {
 }
 
 // GUID retrieves the globally unique identifier of the object.
-func (o *Object) GUID() (guid string, err error) {
+func (o *Object) GUID() (guid *ole.GUID, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
-		return "", ErrClosed
+		return nil, ErrClosed
 	}
 	err = run(func() error {
-		guid, err = o.iface.GUID()
+		var sguid string
+		sguid, err = o.iface.GUID()
 		if err != nil {
 			return err
 		}
-		// TODO: Cast guid to a proper ole.GUID type
+
+		guid = ole.NewGUID(sguid)
+		if guid == nil {
+			return ErrInvalidGUID
+		}
+
 		return nil
 	})
 	return
