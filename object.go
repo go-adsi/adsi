@@ -187,3 +187,41 @@ func (o *Object) ToContainer() (c *Container, err error) {
 	})
 	return
 }
+
+// ToComputer attempts to acquire a computer interface for the object.
+func (o *Object) ToComputer() (c *Computer, err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		idispatch, err := o.iface.QueryInterface(api.IID_IADsComputer)
+		if err != nil {
+			return err
+		}
+		iface := (*api.IADsComputer)(unsafe.Pointer(idispatch))
+		c = NewComputer(iface)
+		return nil
+	})
+	return
+}
+
+// ToGroup attempts to acquire a group interface for the object.
+func (o *Object) ToGroup() (g *Group, err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		idispatch, err := o.iface.QueryInterface(api.IID_IADsGroup)
+		if err != nil {
+			return err
+		}
+		iface := (*api.IADsGroup)(unsafe.Pointer(idispatch))
+		g = NewGroup(iface)
+		return nil
+	})
+	return
+}
