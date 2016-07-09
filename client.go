@@ -164,12 +164,12 @@ func (c *Client) Open(path, user, password string, flags uint32) (obj *Object, e
 // connection. When credentials are not provided the existing security
 // context of the application is used instead.
 //
-// Open returns a generic IDispatch interface for the object, which can be
+// OpenDispatch returns a generic IDispatch interface for the object, which can be
 // further interrogated to find out which component object model interfaces it
 // implements.
 //
 // To return an object that has already been wrapped in the more convenient
-// and safer Object type, use OpenObject instead.
+// and safer Object type, use Open instead.
 //
 // To open an object with a specific interface ID, use OpenInterface instead.
 //
