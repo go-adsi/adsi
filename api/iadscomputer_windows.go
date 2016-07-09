@@ -9,7 +9,8 @@ import (
 	"github.com/go-ole/go-ole"
 )
 
-// ComputerID retrieves the globally unique identifier of the computer.
+// ComputerID retrieves the globally unique identifier of the computer as a
+// string.
 func (v *IADsComputer) ComputerID() (id string, err error) {
 	var bstr *int16
 	hr, _, _ := syscall.Syscall(
