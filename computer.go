@@ -1,8 +1,6 @@
 package adsi
 
 import (
-	"sync"
-
 	"github.com/scjalliance/comshim"
 
 	"gopkg.in/adsi.v0/api"
@@ -10,14 +8,14 @@ import (
 
 // Computer provides access to Active Directory computers.
 type Computer struct {
-	m     sync.RWMutex
+	object
 	iface *api.IADsComputer
 }
 
 // NewComputer returns a computer that manages the given COM interface.
 func NewComputer(iface *api.IADsComputer) *Computer {
 	comshim.Add(1)
-	return &Computer{iface: iface}
+	return &Computer{iface: iface, object: object{iface: &iface.IADs}}
 }
 
 func (c *Computer) closed() bool {
@@ -37,6 +35,7 @@ func (c *Computer) Close() {
 		c.iface.Release()
 		return nil
 	})
+	c.object.iface = nil
 	c.iface = nil
 }
 

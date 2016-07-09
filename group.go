@@ -1,8 +1,6 @@
 package adsi
 
 import (
-	"sync"
-
 	"github.com/scjalliance/comshim"
 
 	"gopkg.in/adsi.v0/api"
@@ -10,14 +8,14 @@ import (
 
 // Group provides access to Active Directory groups.
 type Group struct {
-	m     sync.RWMutex
+	object
 	iface *api.IADsGroup
 }
 
 // NewGroup returns a group that manages the given COM interface.
 func NewGroup(iface *api.IADsGroup) *Group {
 	comshim.Add(1)
-	return &Group{iface: iface}
+	return &Group{iface: iface, object: object{iface: &iface.IADs}}
 }
 
 func (g *Group) closed() bool {
@@ -37,6 +35,7 @@ func (g *Group) Close() {
 		g.iface.Release()
 		return nil
 	})
+	g.object.iface = nil
 	g.iface = nil
 }
 

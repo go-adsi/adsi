@@ -14,37 +14,27 @@ import (
 
 // Object provides access to Active Directory objects.
 type Object struct {
-	m     sync.RWMutex
-	iface *api.IADs
+	object
 }
 
 // NewObject returns an object that manages the given COM interface.
 func NewObject(iface *api.IADs) *Object {
 	comshim.Add(1)
-	return &Object{iface: iface}
+	return &Object{object{iface: iface}}
 }
 
-/*
-// See: https://msdn.microsoft.com/library/aa772184
-func GetObject(path string, iid ole.GUID) (obj *Object, err error) {
-	// TODO: Implement this
-	return
+type object struct {
+	m     sync.RWMutex
+	iface *api.IADs
 }
 
-// See: https://msdn.microsoft.com/library/aa772184
-func RemoteObject(server, path string) (obj *Object, err error) {
-	// TODO: Implement this
-	return
-}
-*/
-
-func (o *Object) closed() bool {
+func (o *object) closed() bool {
 	return (o.iface == nil)
 }
 
 // Close will release resources consumed by the object. It should be
 // called when the object is no longer needed.
-func (o *Object) Close() {
+func (o *object) Close() {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -60,7 +50,7 @@ func (o *Object) Close() {
 }
 
 // Name retrieves the name of the object.
-func (o *Object) Name() (name string, err error) {
+func (o *object) Name() (name string, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -77,7 +67,7 @@ func (o *Object) Name() (name string, err error) {
 }
 
 // Class retrieves the class of the object.
-func (o *Object) Class() (class string, err error) {
+func (o *object) Class() (class string, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -94,7 +84,7 @@ func (o *Object) Class() (class string, err error) {
 }
 
 // GUID retrieves the globally unique identifier of the object.
-func (o *Object) GUID() (guid *ole.GUID, err error) {
+func (o *object) GUID() (guid *ole.GUID, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -118,7 +108,7 @@ func (o *Object) GUID() (guid *ole.GUID, err error) {
 }
 
 // Path retrieves the fully qualified path of the object.
-func (o *Object) Path() (path string, err error) {
+func (o *object) Path() (path string, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -135,7 +125,7 @@ func (o *Object) Path() (path string, err error) {
 }
 
 // Parent retrieves the fully qualified path of the object's parent.
-func (o *Object) Parent() (path string, err error) {
+func (o *object) Parent() (path string, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -153,7 +143,7 @@ func (o *Object) Parent() (path string, err error) {
 
 // Schema retrieves the fully qualified path of the object's schema class
 // object.
-func (o *Object) Schema() (path string, err error) {
+func (o *object) Schema() (path string, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -170,7 +160,7 @@ func (o *Object) Schema() (path string, err error) {
 }
 
 // ToContainer attempts to acquire a container interface for the object.
-func (o *Object) ToContainer() (c *Container, err error) {
+func (o *object) ToContainer() (c *Container, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -189,7 +179,7 @@ func (o *Object) ToContainer() (c *Container, err error) {
 }
 
 // ToComputer attempts to acquire a computer interface for the object.
-func (o *Object) ToComputer() (c *Computer, err error) {
+func (o *object) ToComputer() (c *Computer, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
@@ -208,7 +198,7 @@ func (o *Object) ToComputer() (c *Computer, err error) {
 }
 
 // ToGroup attempts to acquire a group interface for the object.
-func (o *Object) ToGroup() (g *Group, err error) {
+func (o *object) ToGroup() (g *Group, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
