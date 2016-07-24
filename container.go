@@ -105,6 +105,34 @@ func (c *Container) SetFilter(filter ...string) (err error) {
 	return
 }
 
+// Object returns a descendant object with the given class and relative name.
+//
+// If a class is not provided then the first item matching the relative name
+// will be returned regardless of its class.
+func (c *Container) Object(class, name string) (obj *Object, err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		idispatch, err := c.iface.GetObject(class, name)
+		if err != nil {
+			return err
+		}
+		defer idispatch.Release()
+
+		iresult, err := idispatch.QueryInterface(api.IID_IADs)
+		if err != nil {
+			return err
+		}
+		iface := (*api.IADs)(unsafe.Pointer(iresult))
+		obj = NewObject(iface)
+		return nil
+	})
+	return
+}
+
 // ObjectIter provides an iterator for a set of objects.
 type ObjectIter struct {
 	m     sync.RWMutex
