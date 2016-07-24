@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
+	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/api"
 )
 
@@ -171,6 +172,89 @@ func (o *object) Schema() (path string, err error) {
 		return nil
 	})
 	return
+}
+
+// Attr attempts to retrieve the attribute with the given name and
+// return its values as a slice of interfaces. Each value is an interface{}
+// that holds a Go native type that is the best match for the underlying
+// variant.
+func (o *object) Attr(name string) (values []interface{}, err error) {
+	variant, err := o.iface.GetEx(name)
+	if err != nil {
+		return
+	}
+	defer variant.Clear()
+
+	array := variant.ToArray()
+	if array == nil {
+		return nil, ErrNonArrayAttribute
+	}
+
+	dims, _ := comutil.SafeArrayGetDim(array.Array)
+	if dims != 1 {
+		return nil, ErrMultiDimArrayAttribute
+	}
+
+	vt, err := array.GetType()
+	if err != nil {
+		return
+	}
+	if ole.VT(vt) != ole.VT_VARIANT {
+		return nil, ErrNonVariantArrayAttribute
+	}
+
+	elems, err := array.TotalElements(0)
+	if err != nil {
+		return
+	}
+
+	for i := int64(0); i < elems; i++ {
+		element := &ole.VARIANT{}
+		ole.VariantInit(element)
+		defer ole.VariantClear(element)
+		err = comutil.SafeArrayGetElement(array.Array, i, unsafe.Pointer(element))
+		if err != nil {
+			return
+		}
+		values = append(values, element.Value())
+	}
+
+	return
+}
+
+// AttrStringSlice attempts to retrieve the attribute with the given name and
+// return its values as a slice of strings.
+//
+// Any non-string values contained in the attribute will be ommitted.
+func (o *object) AttrStringSlice(name string) (values []string, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return
+	}
+	for _, element := range elements {
+		if s, ok := element.(string); ok {
+			values = append(values, s)
+		} else {
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrString attempts to retrieve the attribute with the given name and
+// return its value as a string. If the attribute holds more than one value,
+// only the first value is returned.
+//
+// Any non-string values contained in the attribute will be ignored.
+func (o *object) AttrString(name string) (attr string, err error) {
+	array, err := o.AttrStringSlice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		return array[0], nil
+	}
+	return "", nil
 }
 
 // ToContainer attempts to acquire a container interface for the object.

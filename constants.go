@@ -17,4 +17,16 @@ var (
 	// ErrInvalidGUID is returned when a given value cannot be interpreted as
 	// a globally unique identifier.
 	ErrInvalidGUID = errors.New("Invalid GUID.")
+
+	// ErrNonArrayAttribute is returned when a given attribute cannot be converted
+	// to a safe array.
+	ErrNonArrayAttribute = errors.New("Attribute is not an array.")
+
+	// ErrMultiDimArrayAttribute is returned when an attribute contains more than
+	// one dimension in its array of values.
+	ErrMultiDimArrayAttribute = errors.New("Attribute contains a multi-dimensional array of values.")
+
+	// ErrNonVariantArrayAttribute is returned when the array members of a given
+	// attribute are not variants.
+	ErrNonVariantArrayAttribute = errors.New("Attribute contains non-variant array members.")
 )
