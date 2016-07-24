@@ -75,6 +75,13 @@ func fetchGroups(root *adsi.Object) (groups []*ReplicationGroup, err error) {
 		}
 		defer gc.Close()
 
+		content, err := gc.Object("msDFSR-Content", "cn=Content")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		folders, err := fetchFolders(content)
+
 		topo, err := gc.Object("msDFSR-Topology", "cn=Topology")
 		if err != nil {
 			log.Fatal(err)
@@ -86,18 +93,46 @@ func fetchGroups(root *adsi.Object) (groups []*ReplicationGroup, err error) {
 			log.Fatal(err)
 		}
 
-		content, err := gc.Object("msDFSR-Content", "cn=Content")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		folders, err := fetchFolders(content)
-
 		groups = append(groups, &ReplicationGroup{
 			Name:    name,
 			ID:      guid,
 			Folders: folders,
 			Members: members,
+		})
+	}
+
+	return
+}
+
+func fetchFolders(content *adsi.Object) (folders []*ReplicationFolder, err error) {
+	c, err := content.ToContainer()
+	if err != nil {
+		return
+	}
+	defer c.Close()
+
+	iter, err := c.Children()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer iter.Close()
+
+	for folder, err := iter.Next(); err == nil; folder, err = iter.Next() {
+		defer folder.Close()
+
+		name, err := folder.Name()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		guid, err := folder.GUID()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		folders = append(folders, &ReplicationFolder{
+			Name: name,
+			ID:   guid,
 		})
 	}
 
@@ -158,41 +193,6 @@ func fetchMembers(topo *adsi.Object) (members []*Member, err error) {
 			Computer:    comp,
 			DN:          dn,
 			Connections: connections,
-		})
-	}
-
-	return
-}
-
-func fetchFolders(content *adsi.Object) (folders []*ReplicationFolder, err error) {
-	c, err := content.ToContainer()
-	if err != nil {
-		return
-	}
-	defer c.Close()
-
-	iter, err := c.Children()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer iter.Close()
-
-	for folder, err := iter.Next(); err == nil; folder, err = iter.Next() {
-		defer folder.Close()
-
-		name, err := folder.Name()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		guid, err := folder.GUID()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		folders = append(folders, &ReplicationFolder{
-			Name: name,
-			ID:   guid,
 		})
 	}
 
