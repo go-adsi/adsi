@@ -140,13 +140,16 @@ func (v *IADs) Get(name string) (prop *ole.VARIANT, err error) {
 		return nil, ole.NewError(ole.E_OUTOFMEMORY)
 	}
 	defer ole.SysFreeString(bname)
+	prop = new(ole.VARIANT)
+	ole.VariantInit(prop)
 	hr, _, _ := syscall.Syscall(
 		uintptr(v.VTable().Get),
 		3,
 		uintptr(unsafe.Pointer(v)),
 		uintptr(unsafe.Pointer(bname)),
-		uintptr(unsafe.Pointer(&prop)))
+		uintptr(unsafe.Pointer(prop)))
 	if hr != 0 {
+		defer ole.VariantClear(prop)
 		return nil, convertHresultToError(hr)
 	}
 	return
@@ -162,13 +165,16 @@ func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 		return nil, ole.NewError(ole.E_OUTOFMEMORY)
 	}
 	defer ole.SysFreeString(bname)
+	prop = new(ole.VARIANT)
+	ole.VariantInit(prop)
 	hr, _, _ := syscall.Syscall(
 		uintptr(v.VTable().GetEx),
 		3,
 		uintptr(unsafe.Pointer(v)),
 		uintptr(unsafe.Pointer(bname)),
-		uintptr(unsafe.Pointer(&prop)))
+		uintptr(unsafe.Pointer(prop)))
 	if hr != 0 {
+		defer prop.Clear()
 		return nil, convertHresultToError(hr)
 	}
 	return
