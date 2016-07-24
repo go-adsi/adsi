@@ -92,7 +92,7 @@ func (o *object) GUID() (guid *ole.GUID, err error) {
 	}
 	err = run(func() error {
 		var sguid string
-		sguid, err = o.iface.GUID()
+		sguid, err = o.iface.GUID() // may return binary octet string in hexadecimal form
 		if err != nil {
 			return err
 		}
@@ -100,6 +100,20 @@ func (o *object) GUID() (guid *ole.GUID, err error) {
 		guid = ole.NewGUID(sguid)
 		if guid == nil {
 			return ErrInvalidGUID
+		}
+
+		if len(sguid) == 32 {
+			// 32 character representations lack curly braces and dashes. When the
+			// LDAP provider returns a GUID as a string in this form, it is the result
+			// of taking the binary octet string of the GUID and converting it to
+			// hexadecimal.
+			//
+			// Assuming that the original binary octet string was in the endianness
+			// of the originating system, and that the originating system was
+			// little-endian, we need to swap the bytes of the GUID we just parsed.
+			guid.Data1 = reverseUint32(guid.Data1)
+			guid.Data2 = reverseUint16(guid.Data2)
+			guid.Data3 = reverseUint16(guid.Data3)
 		}
 
 		return nil
