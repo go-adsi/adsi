@@ -24,7 +24,7 @@ func main() {
 	}
 	defer root.Close()
 
-	groups, err := fetchGroups(root, domain)
+	groups, err := fetchGroups(root)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func main() {
 	}
 }
 
-func fetchGroups(root *adsi.Object, domain string) (groups []*ReplicationGroup, err error) {
+func fetchGroups(root *adsi.Object) (groups []*ReplicationGroup, err error) {
 	c, err := root.ToContainer()
 	if err != nil {
 		return
