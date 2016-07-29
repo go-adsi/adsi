@@ -159,6 +159,33 @@ func (c *Client) Open(path, user, password string, flags uint32) (obj *Object, e
 	return
 }
 
+// OpenContainer opens an ADSI container with the given path. When provided, the
+// username and password are used to establish a security context for the
+// connection. When credentials are not provided the existing security
+// context of the application is used instead.
+//
+// Open returns the ADSI container as a Container type, which provides
+// an idiomatic go wrapper around the underlying component object model
+// IADsContainer interface.
+//
+// Open calls QueryInterface internally to acquire an implementation of
+// the IADsContainer interface that is needed by the Object type. If the
+// returned directory object does not implement the IADsContainer interface an
+// error is returned.
+//
+// The returned container consumes resources until it is closed. It is the
+// caller's responsibilty to call Close on the returned container when it is no
+// longer needed.
+func (c *Client) OpenContainer(path, user, password string, flags uint32) (container *Container, err error) {
+	idispatch, err := c.OpenInterface(path, user, password, flags, api.IID_IADsContainer)
+	if err != nil {
+		return nil, err
+	}
+	iface := (*api.IADsContainer)(unsafe.Pointer(idispatch))
+	container = NewContainer(iface)
+	return
+}
+
 // OpenDispatch opens an ADSI object with the given path. When provided, the
 // username and password are used to establish a security context for the
 // connection. When credentials are not provided the existing security
