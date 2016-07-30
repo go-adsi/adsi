@@ -1,6 +1,10 @@
 package adsi
 
-import "errors"
+import (
+	"errors"
+
+	"gopkg.in/adsi.v0/api"
+)
 
 var (
 	// ErrClosed is returned from calls to a service or interface in the event
@@ -29,4 +33,8 @@ var (
 	// ErrNonVariantArrayAttribute is returned when the array members of a given
 	// attribute are not variants.
 	ErrNonVariantArrayAttribute = errors.New("Attribute contains non-variant array members.")
+)
+
+const (
+	defaultFlags = api.ADS_READONLY_SERVER | api.ADS_SECURE_AUTHENTICATION | api.ADS_USE_SEALING
 )
