@@ -133,6 +133,25 @@ func (c *Container) Object(class, name string) (obj *Object, err error) {
 	return
 }
 
+// ToObject attempts to acquire an object interface for the container.
+func (c *Container) ToObject() (o *Object, err error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.closed() {
+		return nil, ErrClosed
+	}
+	err = run(func() error {
+		idispatch, err := c.iface.QueryInterface(api.IID_IADs)
+		if err != nil {
+			return err
+		}
+		iface := (*api.IADs)(unsafe.Pointer(idispatch))
+		o = NewObject(iface)
+		return nil
+	})
+	return
+}
+
 // Container returns a descendant container with the given class and relative
 // name.
 //
