@@ -245,6 +245,55 @@ func (c *Client) OpenContainerSC(path, user, password string, flags uint32) (con
 	return
 }
 
+// OpenComputer opens an ADSI computer with the given path. The existing
+// security context of the application and any flags specified via SetFlags will
+// be used when making the connection. The default flags specify an encrypted
+// read-only connection.
+//
+// OpenComputer returns the ADSI computer as a Computer type, which provides
+// an idiomatic go wrapper around the underlying component object model
+// IADsComputer interface.
+//
+// OpenComputer calls QueryInterface internally to acquire an implementation of
+// the IADsComputer interface that is needed by the Object type. If the
+// returned directory object does not implement the IADsComputer interface an
+// error is returned.
+//
+// The returned computer consumes resources until it is closed. It is the
+// caller's responsibilty to call Close on the returned computer when it is no
+// longer needed.
+func (c *Client) OpenComputer(path string) (computer *Computer, err error) {
+	return c.OpenComputerSC(path, "", "", c.Flags())
+}
+
+// OpenComputerSC opens an ADSI computer with the given path. When provided,
+// the username and password are used to establish a security context for the
+// connection. When credentials are not provided the existing security
+// context of the application is used instead. The provided flags will be used
+// when making the connection.
+//
+// OpenComputerSC returns the ADSI computer as a Computer type, which
+// provides an idiomatic go wrapper around the underlying component object model
+// IADsComputer interface.
+//
+// OpenComputerSC calls QueryInterface internally to acquire an implementation
+// of the IADsComputer interface that is needed by the Object type. If the
+// returned directory object does not implement the IADsComputer interface an
+// error is returned.
+//
+// The returned computer consumes resources until it is closed. It is the
+// caller's responsibilty to call Close on the returned computer when it is no
+// longer needed.
+func (c *Client) OpenComputerSC(path, user, password string, flags uint32) (computer *Computer, err error) {
+	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, api.IID_IADsComputer)
+	if err != nil {
+		return nil, err
+	}
+	iface := (*api.IADsComputer)(unsafe.Pointer(idispatch))
+	computer = NewComputer(iface)
+	return
+}
+
 // OpenDispatch opens an ADSI object with the given path. The existing security
 // context of the application and any flags specified via SetFlags will be
 // used when making the connection. The default flags specify an encrypted
