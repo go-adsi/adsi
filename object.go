@@ -257,6 +257,41 @@ func (o *object) AttrString(name string) (attr string, err error) {
 	return "", nil
 }
 
+// AttrBoolSlice attempts to retrieve the attribute with the given name and
+// return its values as a slice of bools.
+//
+// Any non-bool values contained in the attribute will be ommitted.
+func (o *object) AttrBoolSlice(name string) (values []bool, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return
+	}
+	for _, element := range elements {
+		if b, ok := element.(bool); ok {
+			values = append(values, b)
+		} else {
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrBool attempts to retrieve the attribute with the given name and
+// return its value as a bool. If the attribute holds more than one value,
+// only the first value is returned.
+//
+// Any non-bool values contained in the attribute will be ignored.
+func (o *object) AttrBool(name string) (attr bool, err error) {
+	array, err := o.AttrBoolSlice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		return array[0], nil
+	}
+	return false, nil
+}
+
 // ToContainer attempts to acquire a container interface for the object.
 func (o *object) ToContainer() (c *Container, err error) {
 	o.m.Lock()
