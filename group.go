@@ -31,10 +31,7 @@ func (g *Group) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		g.iface.Release()
-		return nil
-	})
+	g.iface.Release()
 	g.object.iface = nil
 	g.iface = nil
 }
@@ -46,13 +43,7 @@ func (g *Group) Description() (desc string, err error) {
 	if g.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		desc, err = g.iface.Description()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	desc, err = g.iface.Description()
 	return
 }
 
@@ -64,13 +55,10 @@ func (g *Group) Members() (m *Members, err error) {
 	if g.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		imembers, err := g.iface.Members()
-		if err != nil {
-			return err
-		}
-		m = NewMembers(imembers)
-		return nil
-	})
+	imembers, err := g.iface.Members()
+	if err != nil {
+		return
+	}
+	m = NewMembers(imembers)
 	return
 }

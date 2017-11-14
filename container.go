@@ -36,11 +36,7 @@ func (c *Container) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		c.iface.Release()
-		return nil
-	})
-	// FIXME: What happens if the run returns an error?
+	c.iface.Release() // FIXME: What happens if release returns an error?
 	c.iface = nil
 }
 
@@ -52,20 +48,17 @@ func (c *Container) Children() (iter *ObjectIter, err error) {
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		iunknown, err := c.iface.NewEnum()
-		if err != nil {
-			return err
-		}
-		defer iunknown.Release()
-		idispatch, err := iunknown.QueryInterface(ole.IID_IEnumVariant)
-		if err != nil {
-			return err
-		}
-		iface := (*ole.IEnumVARIANT)(unsafe.Pointer(idispatch))
-		iter = NewObjectIter(iface)
-		return nil
-	})
+	iunknown, err := c.iface.NewEnum()
+	if err != nil {
+		return
+	}
+	defer iunknown.Release()
+	idispatch, err := iunknown.QueryInterface(ole.IID_IEnumVariant)
+	if err != nil {
+		return
+	}
+	iface := (*ole.IEnumVARIANT)(unsafe.Pointer(idispatch))
+	iter = NewObjectIter(iface)
 	return
 }
 
@@ -76,15 +69,12 @@ func (c *Container) Filter() (filter []string, err error) {
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		variant, err := c.iface.Filter()
-		if err != nil {
-			return err
-		}
-		defer variant.Clear()
-		filter = variant.ToArray().ToStringArray()
-		return nil
-	})
+	variant, err := c.iface.Filter()
+	if err != nil {
+		return
+	}
+	defer variant.Clear()
+	filter = variant.ToArray().ToStringArray()
 	return
 }
 
@@ -95,14 +85,11 @@ func (c *Container) SetFilter(filter ...string) (err error) {
 	if c.closed() {
 		return ErrClosed
 	}
-	err = run(func() error {
-		safeByteArray := comutil.SafeArrayFromStringSlice(filter)
-		variant := ole.NewVariant(ole.VT_ARRAY|ole.VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
-		v := &variant
-		defer v.Clear()
-		return c.iface.SetFilter(v)
-	})
-	return
+	safeByteArray := comutil.SafeArrayFromStringSlice(filter)
+	variant := ole.NewVariant(ole.VT_ARRAY|ole.VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
+	v := &variant
+	defer v.Clear()
+	return c.iface.SetFilter(v)
 }
 
 // Object returns a descendant object with the given class and relative name.
@@ -115,21 +102,17 @@ func (c *Container) Object(class, name string) (obj *Object, err error) {
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := c.iface.GetObject(class, name)
-		if err != nil {
-			return err
-		}
-		defer idispatch.Release()
-
-		iresult, err := idispatch.QueryInterface(api.IID_IADs)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADs)(unsafe.Pointer(iresult))
-		obj = NewObject(iface)
-		return nil
-	})
+	idispatch, err := c.iface.GetObject(class, name)
+	if err != nil {
+		return
+	}
+	defer idispatch.Release()
+	iresult, err := idispatch.QueryInterface(api.IID_IADs)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADs)(unsafe.Pointer(iresult))
+	obj = NewObject(iface)
 	return
 }
 
@@ -140,15 +123,12 @@ func (c *Container) ToObject() (o *Object, err error) {
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := c.iface.QueryInterface(api.IID_IADs)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADs)(unsafe.Pointer(idispatch))
-		o = NewObject(iface)
-		return nil
-	})
+	idispatch, err := c.iface.QueryInterface(api.IID_IADs)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADs)(unsafe.Pointer(idispatch))
+	o = NewObject(iface)
 	return
 }
 
@@ -163,21 +143,17 @@ func (c *Container) Container(class, name string) (container *Container, err err
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := c.iface.GetObject(class, name)
-		if err != nil {
-			return err
-		}
-		defer idispatch.Release()
-
-		iresult, err := idispatch.QueryInterface(api.IID_IADsContainer)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADsContainer)(unsafe.Pointer(iresult))
-		container = NewContainer(iface)
-		return nil
-	})
+	idispatch, err := c.iface.GetObject(class, name)
+	if err != nil {
+		return
+	}
+	defer idispatch.Release()
+	iresult, err := idispatch.QueryInterface(api.IID_IADsContainer)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADsContainer)(unsafe.Pointer(iresult))
+	container = NewContainer(iface)
 	return
 }
 
@@ -206,32 +182,30 @@ func (iter *ObjectIter) Next() (obj *Object, err error) {
 	if iter.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		// See https://msdn.microsoft.com/library/aa705990
-		array, length, err := iter.iface.Next(1)
-		if err != nil {
-			return err
-		}
-		defer array.Clear()
-		if length == 0 {
-			return io.EOF
-		}
 
-		idispatch := array.ToIDispatch()
-		if idispatch == nil {
-			return ErrNonDispatchVariant
-		}
-		// Note: Do *not* call idispatch.Release() here, as it will be called
-		//       automatically by array.Clear()
+	// See https://msdn.microsoft.com/library/aa705990
+	array, length, err := iter.iface.Next(1)
+	if err != nil {
+		return
+	}
+	defer array.Clear()
+	if length == 0 {
+		return nil, io.EOF
+	}
 
-		iresult, err := idispatch.QueryInterface(api.IID_IADs)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADs)(unsafe.Pointer(iresult))
-		obj = NewObject(iface)
-		return nil
-	})
+	idispatch := array.ToIDispatch()
+	if idispatch == nil {
+		return nil, ErrNonDispatchVariant
+	}
+	// Note: Do *not* call idispatch.Release() here, as it will be called
+	//       automatically by array.Clear()
+
+	iresult, err := idispatch.QueryInterface(api.IID_IADs)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADs)(unsafe.Pointer(iresult))
+	obj = NewObject(iface)
 	return
 }
 
@@ -248,10 +222,6 @@ func (iter *ObjectIter) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		iter.iface.Release()
-		return nil
-	})
-	// FIXME: What happens if the run returns an error?
+	iter.iface.Release() // FIXME: What happens if release returns an error?
 	iter.iface = nil
 }

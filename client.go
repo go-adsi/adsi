@@ -44,10 +44,7 @@ func NewClient() (*Client, error) {
 func NewRemoteClient(server string) (*Client, error) {
 	comshim.Add(1)
 	c := &Client{flags: defaultFlags}
-	err := run(func() error {
-		return c.init(server)
-	})
-	if err != nil {
+	if err := c.init(server); err != nil {
 		comshim.Done()
 		return nil, err
 	}
@@ -122,14 +119,11 @@ func (c *Client) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		for i := 0; i < len(c.n); i++ {
-			if c.n[i].Iface != nil {
-				c.n[i].Iface.Release()
-			}
+	for i := 0; i < len(c.n); i++ {
+		if c.n[i].Iface != nil {
+			c.n[i].Iface.Release()
 		}
-		return nil
-	})
+	}
 	c.n = nil
 }
 
@@ -339,13 +333,7 @@ func (c *Client) OpenDispatchSC(path, user, password string, flags uint32) (obj 
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		obj, err = c.open(path, user, password, flags)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	obj, err = c.open(path, user, password, flags)
 	return
 }
 
@@ -394,18 +382,12 @@ func (c *Client) OpenInterfaceSC(path, user, password string, flags uint32, iid 
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := c.open(path, user, password, flags)
-		if err != nil {
-			return err
-		}
-		defer idispatch.Release()
-		obj, err = idispatch.QueryInterface(iid)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	idispatch, err := c.open(path, user, password, flags)
+	if err != nil {
+		return
+	}
+	defer idispatch.Release()
+	obj, err = idispatch.QueryInterface(iid)
 	return
 }
 

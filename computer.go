@@ -31,10 +31,7 @@ func (c *Computer) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		c.iface.Release()
-		return nil
-	})
+	c.iface.Release()
 	c.object.iface = nil
 	c.iface = nil
 }
@@ -46,13 +43,7 @@ func (c *Computer) ID() (id string, err error) {
 	if c.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		id, err = c.iface.ComputerID()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	id, err = c.iface.ComputerID()
 	return
 }
 
@@ -63,13 +54,7 @@ func (c *Computer) Site() (site string, err error) {
 	if c.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		site, err = c.iface.Site()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	site, err = c.iface.Site()
 	return
 }
 
@@ -80,12 +65,6 @@ func (c *Computer) OperatingSystem() (kind string, err error) {
 	if c.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		kind, err = c.iface.OperatingSystem()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	kind, err = c.iface.OperatingSystem()
 	return
 }

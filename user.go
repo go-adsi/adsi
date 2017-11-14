@@ -30,10 +30,7 @@ func (u *User) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		u.iface.Release()
-		return nil
-	})
+	u.iface.Release()
 	u.object.iface = nil
 	u.iface = nil
 }

@@ -42,11 +42,7 @@ func (o *object) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		o.iface.Release()
-		return nil
-	})
-	// FIXME: What happens if the run returns an error?
+	o.iface.Release() // FIXME: What happens if release returns an error?
 	o.iface = nil
 }
 
@@ -57,13 +53,7 @@ func (o *object) Name() (name string, err error) {
 	if o.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		name, err = o.iface.Name()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	name, err = o.iface.Name()
 	return
 }
 
@@ -74,13 +64,7 @@ func (o *object) Class() (class string, err error) {
 	if o.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		class, err = o.iface.Class()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	class, err = o.iface.Class()
 	return
 }
 
@@ -91,34 +75,32 @@ func (o *object) GUID() (guid *ole.GUID, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		var sguid string
-		sguid, err = o.iface.GUID() // may return binary octet string in hexadecimal form
-		if err != nil {
-			return err
-		}
 
-		guid = ole.NewGUID(sguid)
-		if guid == nil {
-			return ErrInvalidGUID
-		}
+	var sguid string
+	sguid, err = o.iface.GUID() // may return binary octet string in hexadecimal form
+	if err != nil {
+		return
+	}
 
-		if len(sguid) == 32 {
-			// 32 character representations lack curly braces and dashes. When the
-			// LDAP provider returns a GUID as a string in this form, it is the result
-			// of taking the binary octet string of the GUID and converting it to
-			// hexadecimal.
-			//
-			// Assuming that the original binary octet string was in the endianness
-			// of the originating system, and that the originating system was
-			// little-endian, we need to swap the bytes of the GUID we just parsed.
-			guid.Data1 = reverseUint32(guid.Data1)
-			guid.Data2 = reverseUint16(guid.Data2)
-			guid.Data3 = reverseUint16(guid.Data3)
-		}
+	guid = ole.NewGUID(sguid)
+	if guid == nil {
+		return nil, ErrInvalidGUID
+	}
 
-		return nil
-	})
+	if len(sguid) == 32 {
+		// 32 character representations lack curly braces and dashes. When the
+		// LDAP provider returns a GUID as a string in this form, it is the result
+		// of taking the binary octet string of the GUID and converting it to
+		// hexadecimal.
+		//
+		// Assuming that the original binary octet string was in the endianness
+		// of the originating system, and that the originating system was
+		// little-endian, we need to swap the bytes of the GUID we just parsed.
+		guid.Data1 = reverseUint32(guid.Data1)
+		guid.Data2 = reverseUint16(guid.Data2)
+		guid.Data3 = reverseUint16(guid.Data3)
+	}
+
 	return
 }
 
@@ -129,13 +111,7 @@ func (o *object) Path() (path string, err error) {
 	if o.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		path, err = o.iface.AdsPath()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	path, err = o.iface.AdsPath()
 	return
 }
 
@@ -146,13 +122,7 @@ func (o *object) Parent() (path string, err error) {
 	if o.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		path, err = o.iface.Parent()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	path, err = o.iface.Parent()
 	return
 }
 
@@ -164,13 +134,7 @@ func (o *object) Schema() (path string, err error) {
 	if o.closed() {
 		return "", ErrClosed
 	}
-	err = run(func() error {
-		path, err = o.iface.Schema()
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+	path, err = o.iface.Schema()
 	return
 }
 
@@ -299,15 +263,12 @@ func (o *object) ToContainer() (c *Container, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := o.iface.QueryInterface(api.IID_IADsContainer)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADsContainer)(unsafe.Pointer(idispatch))
-		c = NewContainer(iface)
-		return nil
-	})
+	idispatch, err := o.iface.QueryInterface(api.IID_IADsContainer)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADsContainer)(unsafe.Pointer(idispatch))
+	c = NewContainer(iface)
 	return
 }
 
@@ -318,15 +279,12 @@ func (o *object) ToComputer() (c *Computer, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := o.iface.QueryInterface(api.IID_IADsComputer)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADsComputer)(unsafe.Pointer(idispatch))
-		c = NewComputer(iface)
-		return nil
-	})
+	idispatch, err := o.iface.QueryInterface(api.IID_IADsComputer)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADsComputer)(unsafe.Pointer(idispatch))
+	c = NewComputer(iface)
 	return
 }
 
@@ -337,14 +295,11 @@ func (o *object) ToGroup() (g *Group, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		idispatch, err := o.iface.QueryInterface(api.IID_IADsGroup)
-		if err != nil {
-			return err
-		}
-		iface := (*api.IADsGroup)(unsafe.Pointer(idispatch))
-		g = NewGroup(iface)
-		return nil
-	})
+	idispatch, err := o.iface.QueryInterface(api.IID_IADsGroup)
+	if err != nil {
+		return
+	}
+	iface := (*api.IADsGroup)(unsafe.Pointer(idispatch))
+	g = NewGroup(iface)
 	return
 }

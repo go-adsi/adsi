@@ -37,10 +37,7 @@ func (m *Members) Close() {
 		return
 	}
 	defer comshim.Done()
-	run(func() error {
-		m.iface.Release()
-		return nil
-	})
+	m.iface.Release()
 	m.iface = nil
 }
 
@@ -52,20 +49,17 @@ func (m *Members) Iter() (iter *ObjectIter, err error) {
 	if m.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		iunknown, err := m.iface.NewEnum()
-		if err != nil {
-			return err
-		}
-		defer iunknown.Release()
-		idispatch, err := iunknown.QueryInterface(ole.IID_IEnumVariant)
-		if err != nil {
-			return err
-		}
-		iface := (*ole.IEnumVARIANT)(unsafe.Pointer(idispatch))
-		iter = NewObjectIter(iface)
-		return nil
-	})
+	iunknown, err := m.iface.NewEnum()
+	if err != nil {
+		return
+	}
+	defer iunknown.Release()
+	idispatch, err := iunknown.QueryInterface(ole.IID_IEnumVariant)
+	if err != nil {
+		return
+	}
+	iface := (*ole.IEnumVARIANT)(unsafe.Pointer(idispatch))
+	iter = NewObjectIter(iface)
 	return
 }
 
@@ -76,15 +70,12 @@ func (m *Members) Filter() (filter []string, err error) {
 	if m.closed() {
 		return nil, ErrClosed
 	}
-	err = run(func() error {
-		variant, err := m.iface.Filter()
-		if err != nil {
-			return err
-		}
-		defer variant.Clear()
-		filter = variant.ToArray().ToStringArray()
-		return nil
-	})
+	variant, err := m.iface.Filter()
+	if err != nil {
+		return
+	}
+	defer variant.Clear()
+	filter = variant.ToArray().ToStringArray()
 	return
 }
 
@@ -95,12 +86,9 @@ func (m *Members) SetFilter(filter ...string) (err error) {
 	if m.closed() {
 		return ErrClosed
 	}
-	err = run(func() error {
-		safeByteArray := comutil.SafeArrayFromStringSlice(filter)
-		variant := ole.NewVariant(ole.VT_ARRAY|ole.VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
-		v := &variant
-		defer v.Clear()
-		return m.iface.SetFilter(v)
-	})
-	return
+	safeByteArray := comutil.SafeArrayFromStringSlice(filter)
+	variant := ole.NewVariant(ole.VT_ARRAY|ole.VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
+	v := &variant
+	defer v.Clear()
+	return m.iface.SetFilter(v)
 }
