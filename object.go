@@ -205,6 +205,41 @@ func (o *object) AttrString(name string) (attr string, err error) {
 	return "", nil
 }
 
+// AttrBytesSlice attempts to retrieve the attribute with the given name and
+// return its values as a slice of strings.
+//
+// Any non-string values contained in the attribute will be ommitted.
+func (o *object) AttrBytesSlice(name string) (values [][]byte, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return
+	}
+	for _, element := range elements {
+		if data, ok := element.([]byte); ok {
+			values = append(values, data)
+		} else {
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrBytes attempts to retrieve the attribute with the given name and
+// return its value as a string. If the attribute holds more than one value,
+// only the first value is returned.
+//
+// Any non-string values contained in the attribute will be ignored.
+func (o *object) AttrBytes(name string) (attr []byte, err error) {
+	array, err := o.AttrBytesSlice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		return array[0], nil
+	}
+	return nil, nil
+}
+
 // AttrBoolSlice attempts to retrieve the attribute with the given name and
 // return its values as a slice of bools.
 //
@@ -238,6 +273,60 @@ func (o *object) AttrBool(name string) (attr bool, err error) {
 		return array[0], nil
 	}
 	return false, nil
+}
+
+// AttrGUIDSlice attempts to retrieve the attribute with the given name and
+// return its values as a slice of GUIDs.
+//
+// Any non-GUID values contained in the attribute will be ommitted.
+//
+// Values are returned as-is, without any byte ordering adjustment.
+func (o *object) AttrGUIDSlice(name string) (values []uuid.UUID, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return
+	}
+	for _, element := range elements {
+		switch e := element.(type) {
+		case string:
+			value, parseErr := uuid.Parse(e)
+			if parseErr == nil {
+				values = append(values, value)
+			} else {
+				// TODO: Consider returning error
+			}
+		case []byte:
+			if len(e) == 16 {
+				value, parseErr := uuid.FromBytes(e)
+				if parseErr == nil {
+					values = append(values, value)
+				} else {
+					// TODO: Consider returning error
+				}
+			} else {
+				// TODO: Consider returning error
+			}
+		default:
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrGUID attempts to retrieve the attribute with the given name and
+// return its value as a GUID in string format. If the attribute holds more
+// than one value, only the first value is returned.
+//
+// Any non-string values contained in the attribute will be ignored.
+func (o *object) AttrGUID(name string) (attr uuid.UUID, err error) {
+	array, err := o.AttrGUIDSlice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		attr = array[0]
+	}
+	return
 }
 
 // ToContainer attempts to acquire a container interface for the object.
