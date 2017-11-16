@@ -2,11 +2,14 @@
 
 package api
 
-import "github.com/go-ole/go-ole"
+import (
+	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
+)
 
 // NewIADsContainer returns a new instance of the IADsContainer
 // component object model interface.
-func NewIADsContainer(server string, clsid *ole.GUID) (*IADsContainer, error) {
+func NewIADsContainer(server string, clsid uuid.UUID) (*IADsContainer, error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
 }
 

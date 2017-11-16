@@ -9,6 +9,7 @@ import (
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comiid"
 )
 
 // Container provides access to Active Directory container objects.
@@ -107,7 +108,7 @@ func (c *Container) Object(class, name string) (obj *Object, err error) {
 		return
 	}
 	defer idispatch.Release()
-	iresult, err := idispatch.QueryInterface(api.IID_IADs)
+	iresult, err := idispatch.QueryInterface(comutil.GUID(comiid.IADs))
 	if err != nil {
 		return
 	}
@@ -123,7 +124,7 @@ func (c *Container) ToObject() (o *Object, err error) {
 	if c.closed() {
 		return nil, ErrClosed
 	}
-	idispatch, err := c.iface.QueryInterface(api.IID_IADs)
+	idispatch, err := c.iface.QueryInterface(comutil.GUID(comiid.IADs))
 	if err != nil {
 		return
 	}
@@ -148,7 +149,7 @@ func (c *Container) Container(class, name string) (container *Container, err err
 		return
 	}
 	defer idispatch.Release()
-	iresult, err := idispatch.QueryInterface(api.IID_IADsContainer)
+	iresult, err := idispatch.QueryInterface(comutil.GUID(comiid.IADsContainer))
 	if err != nil {
 		return
 	}
@@ -200,7 +201,7 @@ func (iter *ObjectIter) Next() (obj *Object, err error) {
 	// Note: Do *not* call idispatch.Release() here, as it will be called
 	//       automatically by array.Clear()
 
-	iresult, err := idispatch.QueryInterface(api.IID_IADs)
+	iresult, err := idispatch.QueryInterface(comutil.GUID(comiid.IADs))
 	if err != nil {
 		return
 	}

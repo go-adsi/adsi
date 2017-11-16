@@ -7,13 +7,15 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
 	"github.com/scjalliance/comutil"
+	"gopkg.in/adsi.v0/comiid"
 )
 
 // NewIADsContainer returns a new instance of the IADsContainer
 // component object model interface.
-func NewIADsContainer(server string, clsid *ole.GUID) (*IADsContainer, error) {
-	p, err := comutil.CreateRemoteObject(server, clsid, IID_IADsContainer)
+func NewIADsContainer(server string, clsid uuid.UUID) (*IADsContainer, error) {
+	p, err := comutil.CreateRemoteObject(server, clsid, comiid.IADsContainer)
 	return (*IADsContainer)(unsafe.Pointer(p)), err
 }
 

@@ -1,13 +1,16 @@
 package adsi
 
 import (
+	"encoding/hex"
+	"fmt"
 	"sync"
 	"unsafe"
 
-	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comiid"
 )
 
 // ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208
@@ -69,11 +72,12 @@ func (o *object) Class() (class string, err error) {
 }
 
 // GUID retrieves the globally unique identifier of the object.
-func (o *object) GUID() (guid *ole.GUID, err error) {
+func (o *object) GUID() (guid uuid.UUID, err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
-		return nil, ErrClosed
+		err = ErrClosed
+		return
 	}
 
 	var sguid string
@@ -82,26 +86,31 @@ func (o *object) GUID() (guid *ole.GUID, err error) {
 		return
 	}
 
-	guid = ole.NewGUID(sguid)
-	if guid == nil {
-		return nil, ErrInvalidGUID
-	}
-
-	if len(sguid) == 32 {
+	switch len(sguid) {
+	case 38:
+		// 38 character representations include dashes and curly braces
+		return uuid.Parse(sguid[1:37]) // Omit the braces
+	case 32:
 		// 32 character representations lack curly braces and dashes. When the
 		// LDAP provider returns a GUID as a string in this form, it is the result
 		// of taking the binary octet string of the GUID and converting it to
 		// hexadecimal.
-		//
-		// Assuming that the original binary octet string was in the endianness
-		// of the originating system, and that the originating system was
-		// little-endian, we need to swap the bytes of the GUID we just parsed.
-		guid.Data1 = reverseUint32(guid.Data1)
-		guid.Data2 = reverseUint16(guid.Data2)
-		guid.Data3 = reverseUint16(guid.Data3)
-	}
+		_, err = hex.Decode(guid[:], []byte(sguid))
+		if err != nil {
+			return
+		}
 
-	return
+		// Assuming the original binary octet string was in the endianness
+		// of the originating system, and that the originating system was
+		// little-endian, we need to swap the bytes of the GUID we just parsed
+		// to put them back in big-endian order.
+		guid[0], guid[1], guid[2], guid[3] = guid[3], guid[2], guid[1], guid[0]
+		guid[4], guid[5] = guid[5], guid[4]
+		guid[6], guid[7] = guid[7], guid[6]
+		return
+	default:
+		return uuid.Parse(sguid)
+	}
 }
 
 // Path retrieves the fully qualified path of the object.
@@ -154,35 +163,10 @@ func (o *object) Attr(name string) (values []interface{}, err error) {
 		return nil, ErrNonArrayAttribute
 	}
 
-	dims, _ := comutil.SafeArrayGetDim(array.Array)
-	if dims != 1 {
-		return nil, ErrMultiDimArrayAttribute
-	}
-
-	vt, err := array.GetType()
+	values, err = comutil.SafeArrayToVariantSlice(array)
 	if err != nil {
-		return
+		err = fmt.Errorf("unable to read \"%s\" attribute: %v", name, err)
 	}
-	if ole.VT(vt) != ole.VT_VARIANT {
-		return nil, ErrNonVariantArrayAttribute
-	}
-
-	elems, err := array.TotalElements(0)
-	if err != nil {
-		return
-	}
-
-	for i := int64(0); i < elems; i++ {
-		element := &ole.VARIANT{}
-		ole.VariantInit(element)
-		defer ole.VariantClear(element)
-		err = comutil.SafeArrayGetElement(array.Array, i, unsafe.Pointer(element))
-		if err != nil {
-			return
-		}
-		values = append(values, element.Value())
-	}
-
 	return
 }
 
@@ -263,7 +247,7 @@ func (o *object) ToContainer() (c *Container, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	idispatch, err := o.iface.QueryInterface(api.IID_IADsContainer)
+	idispatch, err := o.iface.QueryInterface(comutil.GUID(comiid.IADsContainer))
 	if err != nil {
 		return
 	}
@@ -279,7 +263,7 @@ func (o *object) ToComputer() (c *Computer, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	idispatch, err := o.iface.QueryInterface(api.IID_IADsComputer)
+	idispatch, err := o.iface.QueryInterface(comutil.GUID(comiid.IADsComputer))
 	if err != nil {
 		return
 	}
@@ -295,7 +279,7 @@ func (o *object) ToGroup() (g *Group, err error) {
 	if o.closed() {
 		return nil, ErrClosed
 	}
-	idispatch, err := o.iface.QueryInterface(api.IID_IADsGroup)
+	idispatch, err := o.iface.QueryInterface(comutil.GUID(comiid.IADsGroup))
 	if err != nil {
 		return
 	}

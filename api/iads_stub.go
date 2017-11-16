@@ -2,7 +2,10 @@
 
 package api
 
-import "github.com/go-ole/go-ole"
+import (
+	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
+)
 
 // Name retrieves the name of the object.
 func (v *IADs) Name() (name string, err error) {
@@ -15,7 +18,7 @@ func (v *IADs) Class() (class string, err error) {
 }
 
 // GUID retrieves the GUID of the object as a string.
-func (v *IADs) GUID() (guid string, err error) {
+func (v *IADs) GUID() (guid uuid.UUID, err error) {
 	return "", ole.NewError(ole.E_NOTIMPL)
 }
 

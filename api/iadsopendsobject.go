@@ -4,7 +4,9 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
 	"github.com/scjalliance/comutil"
+	"gopkg.in/adsi.v0/comiid"
 )
 
 // IADsOpenDSObjectVtbl represents the component object model virtual
@@ -28,7 +30,7 @@ func (v *IADsOpenDSObject) VTable() *IADsOpenDSObjectVtbl {
 
 // NewIADsOpenDSObject returns a new instance of the IADsOpenDSObject
 // component object model interface.
-func NewIADsOpenDSObject(server string, clsid *ole.GUID) (ds *IADsOpenDSObject, err error) {
-	p, err := comutil.CreateRemoteObject(server, clsid, IID_IADsOpenDSObject)
+func NewIADsOpenDSObject(server string, clsid uuid.UUID) (ds *IADsOpenDSObject, err error) {
+	p, err := comutil.CreateRemoteObject(server, clsid, comiid.IADsOpenDSObject)
 	return (*IADsOpenDSObject)(unsafe.Pointer(p)), err
 }

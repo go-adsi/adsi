@@ -6,14 +6,18 @@ import (
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
+	"github.com/scjalliance/comutil"
 	"gopkg.in/adsi.v0/adspath"
 	"gopkg.in/adsi.v0/api"
+	"gopkg.in/adsi.v0/comclsid"
+	"gopkg.in/adsi.v0/comiid"
 )
 
 type namespace struct {
 	Name    string
-	ClassID *ole.GUID
+	ClassID uuid.UUID
 	Iface   *api.IADsOpenDSObject
 	Err     error
 }
@@ -55,7 +59,7 @@ func NewRemoteClient(server string) (*Client, error) {
 func (c *Client) init(server string) (err error) {
 	// Acquiring a container for the CLSID_ADsNamespaces class gives us access to
 	// an enumeration of all of the available namespaces.
-	iface, err := api.NewIADsContainer(server, api.CLSID_ADsNamespaces)
+	iface, err := api.NewIADsContainer(server, comclsid.ADsNamespaces)
 	if err != nil {
 		return err
 	}
@@ -93,7 +97,7 @@ func (c *Client) init(server string) (err error) {
 
 		// Interface
 		var idisp *ole.IDispatch
-		idisp, item.Err = child.iface.QueryInterface(api.IID_IADsOpenDSObject)
+		idisp, item.Err = child.iface.QueryInterface(comutil.GUID(comiid.IADsOpenDSObject))
 		if item.Err != nil {
 			continue
 		}
@@ -181,7 +185,7 @@ func (c *Client) Open(path string) (obj *Object, err error) {
 // caller's responsibilty to call Close on the returned object when it is no
 // longer needed.
 func (c *Client) OpenSC(path, user, password string, flags uint32) (obj *Object, err error) {
-	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, api.IID_IADs)
+	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, comiid.IADs)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +234,7 @@ func (c *Client) OpenContainer(path string) (container *Container, err error) {
 // caller's responsibilty to call Close on the returned container when it is no
 // longer needed.
 func (c *Client) OpenContainerSC(path, user, password string, flags uint32) (container *Container, err error) {
-	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, api.IID_IADsContainer)
+	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, comiid.IADsContainer)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +283,7 @@ func (c *Client) OpenComputer(path string) (computer *Computer, err error) {
 // caller's responsibilty to call Close on the returned computer when it is no
 // longer needed.
 func (c *Client) OpenComputerSC(path, user, password string, flags uint32) (computer *Computer, err error) {
-	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, api.IID_IADsComputer)
+	idispatch, err := c.OpenInterfaceSC(path, user, password, flags, comiid.IADsComputer)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +358,7 @@ func (c *Client) OpenDispatchSC(path, user, password string, flags uint32) (obj 
 // The returned interface consumes resources until it is released. It is the
 // caller's responsibilty to call Release on the returned object when it is no
 // longer needed.
-func (c *Client) OpenInterface(path string, iid *ole.GUID) (obj *ole.IDispatch, err error) {
+func (c *Client) OpenInterface(path string, iid uuid.UUID) (obj *ole.IDispatch, err error) {
 	return c.OpenInterfaceSC(path, "", "", c.Flags(), iid)
 }
 
@@ -376,7 +380,7 @@ func (c *Client) OpenInterface(path string, iid *ole.GUID) (obj *ole.IDispatch, 
 // The returned interface consumes resources until it is released. It is the
 // caller's responsibilty to call Release on the returned object when it is no
 // longer needed.
-func (c *Client) OpenInterfaceSC(path, user, password string, flags uint32, iid *ole.GUID) (obj *ole.IDispatch, err error) {
+func (c *Client) OpenInterfaceSC(path, user, password string, flags uint32, iid uuid.UUID) (obj *ole.IDispatch, err error) {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if c.closed() {
@@ -387,7 +391,7 @@ func (c *Client) OpenInterfaceSC(path, user, password string, flags uint32, iid 
 		return
 	}
 	defer idispatch.Release()
-	obj, err = idispatch.QueryInterface(iid)
+	obj, err = idispatch.QueryInterface(comutil.GUID(iid))
 	return
 }
 
