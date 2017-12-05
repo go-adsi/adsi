@@ -147,6 +147,26 @@ func (o *object) Schema() (path string, err error) {
 	return
 }
 
+// Pull causes the given list of attributes to be retrieved from the
+// underlying LDAP data store. The retrieved attributes will be cached.
+//
+// Subsequent calls to the attr retrieval functions will return the cached
+// values.
+func (o *object) Pull(attrs ...string) (err error) {
+	if len(attrs) == 0 {
+		return nil
+	}
+
+	v, err := comutil.BuildVarArrayStr(attrs...)
+	if err != nil {
+		return
+	}
+	defer v.Clear()
+
+	err = o.iface.GetInfoEx(v)
+	return
+}
+
 // Attr attempts to retrieve the attribute with the given name and
 // return its values as a slice of interfaces. Each value is an interface{}
 // that holds a Go native type that is the best match for the underlying

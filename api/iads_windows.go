@@ -179,3 +179,18 @@ func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 	}
 	return
 }
+
+// GetInfoEx loads the given set of property names into the cache. The given
+// variant must be a safe array of null-terminated unicode strings.
+func (v *IADs) GetInfoEx(variant *ole.VARIANT) (err error) {
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().GetInfoEx),
+		3,
+		uintptr(unsafe.Pointer(v)),
+		uintptr(unsafe.Pointer(variant)),
+		0) // This is a reserved value: it must be included and must be zero
+	if hr != 0 {
+		return convertHresultToError(hr)
+	}
+	return nil
+}
