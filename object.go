@@ -6,6 +6,7 @@ import (
 	"sync"
 	"unsafe"
 
+	ole "github.com/go-ole/go-ole"
 	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
@@ -171,10 +172,13 @@ func (o *object) Pull(attrs ...string) (err error) {
 // return its values as a slice of interfaces. Each value is an interface{}
 // that holds a Go native type that is the best match for the underlying
 // variant.
+//
+// If the attribute contains IUnknown or IDispatch members, it is the
+// caller's responsibility to release them.
 func (o *object) Attr(name string) (values []interface{}, err error) {
 	variant, err := o.iface.GetEx(name)
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer variant.Clear()
 
@@ -185,9 +189,9 @@ func (o *object) Attr(name string) (values []interface{}, err error) {
 
 	values, err = comutil.SafeArrayToVariantSlice(array)
 	if err != nil {
-		err = fmt.Errorf("unable to read \"%s\" attribute: %v", name, err)
+		return nil, fmt.Errorf("unable to read \"%s\" attribute: %v", name, err)
 	}
-	return
+	return values, nil
 }
 
 // AttrStringSlice attempts to retrieve the attribute with the given name and
@@ -200,9 +204,14 @@ func (o *object) AttrStringSlice(name string) (values []string, err error) {
 		return
 	}
 	for _, element := range elements {
-		if s, ok := element.(string); ok {
-			values = append(values, s)
-		} else {
+		switch v := element.(type) {
+		case string:
+			values = append(values, v)
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			v.Release()
+		default:
 			// TODO: Consider returning error
 		}
 	}
@@ -226,18 +235,23 @@ func (o *object) AttrString(name string) (attr string, err error) {
 }
 
 // AttrBytesSlice attempts to retrieve the attribute with the given name and
-// return its values as a slice of strings.
+// return its values as a slice of byte slices.
 //
-// Any non-string values contained in the attribute will be ommitted.
+// Any non-byte values contained in the attribute will be ommitted.
 func (o *object) AttrBytesSlice(name string) (values [][]byte, err error) {
 	elements, err := o.Attr(name)
 	if err != nil {
 		return
 	}
 	for _, element := range elements {
-		if data, ok := element.([]byte); ok {
-			values = append(values, data)
-		} else {
+		switch v := element.(type) {
+		case []byte:
+			values = append(values, v)
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			v.Release()
+		default:
 			// TODO: Consider returning error
 		}
 	}
@@ -270,9 +284,14 @@ func (o *object) AttrBoolSlice(name string) (values []bool, err error) {
 		return
 	}
 	for _, element := range elements {
-		if b, ok := element.(bool); ok {
-			values = append(values, b)
-		} else {
+		switch v := element.(type) {
+		case bool:
+			values = append(values, v)
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			v.Release()
+		default:
 			// TODO: Consider returning error
 		}
 	}
@@ -295,6 +314,133 @@ func (o *object) AttrBool(name string) (attr bool, err error) {
 	return false, nil
 }
 
+// AttrIntSlice attempts to retrieve the attribute with the given name and
+// return its values as a slice of integers.
+//
+// Any non-integer values contained in the attribute will be ommitted.
+//
+// Unsigned integer values will be coerced into signed types.
+//
+// 64-bit integer types will be coerced into integer types, which may
+// overflow the value on 32-bit systems.
+func (o *object) AttrIntSlice(name string) (values []int, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return
+	}
+	for i, element := range elements {
+		switch v := element.(type) {
+		case int:
+			values = append(values, v)
+		case uint:
+			values = append(values, int(v))
+		case int16:
+			values = append(values, int(v))
+		case uint16:
+			values = append(values, int(v))
+		case int32:
+			values = append(values, int(v))
+		case uint32:
+			values = append(values, int(v))
+		case int64:
+			values = append(values, int(v))
+		case uint64:
+			values = append(values, int(v))
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			var value int64
+			value, err = dispatchToInt64(v)
+			v.Release()
+			if err != nil {
+				return nil, fmt.Errorf("attribute \"%s\" value %d: %v", name, i, err)
+			}
+			values = append(values, int(value))
+		default:
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrInt attempts to retrieve the attribute with the given name and
+// return its value as an integer. If the attribute holds more than one value,
+// only the first value is returned.
+//
+// Any non-integer values contained in the attribute will be ignored.
+func (o *object) AttrInt(name string) (attr int, err error) {
+	array, err := o.AttrIntSlice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		return array[0], nil
+	}
+	return 0, nil
+}
+
+// AttrInt64Slice attempts to retrieve the attribute with the given name and
+// return its values as a slice of 64-bit integers.
+//
+// Any non-integer values contained in the attribute will be ommitted.
+//
+// Unsigned integer values will be coerced into signed types.
+func (o *object) AttrInt64Slice(name string) (values []int64, err error) {
+	elements, err := o.Attr(name)
+	if err != nil {
+		return nil, err
+	}
+	for i, element := range elements {
+		switch v := element.(type) {
+		case int:
+			values = append(values, int64(v))
+		case uint:
+			values = append(values, int64(v))
+		case int16:
+			values = append(values, int64(v))
+		case uint16:
+			values = append(values, int64(v))
+		case int32:
+			values = append(values, int64(v))
+		case uint32:
+			values = append(values, int64(v))
+		case int64:
+			values = append(values, v)
+		case uint64:
+			values = append(values, int64(v))
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			var value int64
+			value, err = dispatchToInt64(v)
+			v.Release()
+			if err != nil {
+				return nil, fmt.Errorf("attribute \"%s\" value %d: %v", name, i, err)
+			}
+			values = append(values, value)
+		default:
+			// TODO: Consider returning error
+		}
+	}
+	return
+}
+
+// AttrInt64 attempts to retrieve the attribute with the given name and
+// return its value as a 64-bit integer. If the attribute holds more than one
+// value, only the first value is returned.
+//
+// Any non-integer values contained in the attribute will be ignored.
+func (o *object) AttrInt64(name string) (attr int64, err error) {
+	array, err := o.AttrInt64Slice(name)
+	if err != nil {
+		return
+	}
+	if len(array) > 0 {
+		return array[0], nil
+	}
+	return 0, nil
+}
+
 // AttrGUIDSlice attempts to retrieve the attribute with the given name and
 // return its values as a slice of GUIDs.
 //
@@ -307,17 +453,17 @@ func (o *object) AttrGUIDSlice(name string) (values []uuid.UUID, err error) {
 		return
 	}
 	for _, element := range elements {
-		switch e := element.(type) {
+		switch v := element.(type) {
 		case string:
-			value, parseErr := uuid.Parse(e)
+			value, parseErr := uuid.Parse(v)
 			if parseErr == nil {
 				values = append(values, value)
 			} else {
 				// TODO: Consider returning error
 			}
 		case []byte:
-			if len(e) == 16 {
-				value, parseErr := uuid.FromBytes(e)
+			if len(v) == 16 {
+				value, parseErr := uuid.FromBytes(v)
 				if parseErr == nil {
 					values = append(values, value)
 				} else {
@@ -326,6 +472,10 @@ func (o *object) AttrGUIDSlice(name string) (values []uuid.UUID, err error) {
 			} else {
 				// TODO: Consider returning error
 			}
+		case *ole.IUnknown:
+			v.Release()
+		case *ole.IDispatch:
+			v.Release()
 		default:
 			// TODO: Consider returning error
 		}
