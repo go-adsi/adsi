@@ -6,8 +6,8 @@ import (
 
 	ole "github.com/go-ole/go-ole"
 	"github.com/scjalliance/comutil"
-	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comiid"
+	"github.com/go-adsi/adsi/api"
+	"github.com/go-adsi/adsi/comiid"
 )
 
 func reverseUint16(v uint16) uint16 {

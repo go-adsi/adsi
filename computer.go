@@ -3,7 +3,7 @@ package adsi
 import (
 	"github.com/scjalliance/comshim"
 
-	"gopkg.in/adsi.v0/api"
+	"github.com/go-adsi/adsi/api"
 )
 
 // Computer provides access to Active Directory computers.
