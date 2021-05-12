@@ -1,4 +1,4 @@
-# Go language bindings for ADSI
+# go-adsi (Go language bindings for ADSI) [![Go Reference](https://pkg.go.dev/badge/github.com/go-adsi/adsi.svg)](https://pkg.go.dev/github.com/go-adsi/adsi)
 
 This package provides access to the Active Directory Service Interfaces that are
 available through the Windows component object model API. This package should
