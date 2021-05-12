@@ -6,7 +6,7 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/google/uuid"
 	"github.com/scjalliance/comutil"
-	"gopkg.in/adsi.v0/comiid"
+	"github.com/go-adsi/adsi/v2/comiid"
 )
 
 // IADsOpenDSObjectVtbl represents the component object model virtual

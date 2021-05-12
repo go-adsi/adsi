@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
-	"gopkg.in/adsi.v0/adspath"
-	"gopkg.in/adsi.v0/api"
-	"gopkg.in/adsi.v0/comclsid"
-	"gopkg.in/adsi.v0/comiid"
+	"github.com/go-adsi/adsi/v2/adspath"
+	"github.com/go-adsi/adsi/v2/api"
+	"github.com/go-adsi/adsi/v2/comclsid"
+	"github.com/go-adsi/adsi/v2/comiid"
 )
 
 type namespace struct {

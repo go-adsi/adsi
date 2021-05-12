@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/adsi.v0"
-	"gopkg.in/adsi.v0/adspath"
+	"github.com/go-adsi/adsi/v2"
+	"github.com/go-adsi/adsi/v2/adspath"
 )
 
 func main() {
