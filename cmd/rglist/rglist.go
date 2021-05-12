@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-adsi/adsi/v2"
+	"github.com/go-adsi/adsi"
 )
 
 func main() {

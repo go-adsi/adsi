@@ -8,7 +8,7 @@ import (
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
 
-	"github.com/go-adsi/adsi/v2/api"
+	"github.com/go-adsi/adsi/api"
 )
 
 // Members provides access to group membership.

@@ -3,7 +3,7 @@ package adsi
 import (
 	"errors"
 
-	"github.com/go-adsi/adsi/v2/api"
+	"github.com/go-adsi/adsi/api"
 )
 
 var (

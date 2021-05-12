@@ -8,8 +8,8 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
-	"github.com/go-adsi/adsi/v2/api"
-	"github.com/go-adsi/adsi/v2/comiid"
+	"github.com/go-adsi/adsi/api"
+	"github.com/go-adsi/adsi/comiid"
 )
 
 // Container provides access to Active Directory container objects.

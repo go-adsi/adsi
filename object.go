@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
-	"github.com/go-adsi/adsi/v2/api"
-	"github.com/go-adsi/adsi/v2/comiid"
+	"github.com/go-adsi/adsi/api"
+	"github.com/go-adsi/adsi/comiid"
 )
 
 // ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208

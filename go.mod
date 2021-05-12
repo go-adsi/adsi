@@ -1,4 +1,4 @@
-module github.com/go-adsi/adsi/v2
+module github.com/go-adsi/adsi
 
 go 1.16
 

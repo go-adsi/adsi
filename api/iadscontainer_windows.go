@@ -9,7 +9,7 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/google/uuid"
 	"github.com/scjalliance/comutil"
-	"github.com/go-adsi/adsi/v2/comiid"
+	"github.com/go-adsi/adsi/comiid"
 )
 
 // NewIADsContainer returns a new instance of the IADsContainer
