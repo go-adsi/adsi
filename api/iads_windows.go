@@ -3,15 +3,10 @@
 package api
 
 import (
-	"errors"
 	"syscall"
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
-)
-
-var (
-	ErrUnsupportedType = errors.New("unsupported type")
 )
 
 // Name retrieves the name of the object.
@@ -200,23 +195,16 @@ func (v *IADs) GetInfoEx(variant *ole.VARIANT) (err error) {
 	return nil
 }
 
-// Put sets the values of an attribute in the ADSI attribute cache. The value
-// must be commited with SetInfo to be made persistent.
-func (v *IADs) Put(name string, val interface{}) error {
+// PutInt sets the values of an int attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutInt(name string, val int) error {
 	bname := ole.SysAllocStringLen(name)
 	if bname == nil {
 		return ole.NewError(ole.E_OUTOFMEMORY)
 	}
 	defer ole.SysFreeString(bname)
-	var prop ole.VARIANT
-	switch vt := val.(type) {
-	case string:
-		prop = ole.NewVariant(ole.VT_BSTR, int64(uintptr(unsafe.Pointer(ole.SysAllocStringLen(vt)))))
-	case int:
-		prop = ole.NewVariant(ole.VT_I4, int64(vt))
-	default:
-		return ErrUnsupportedType
-	}
+	prop := ole.NewVariant(ole.VT_I4, int64(val))
+	defer prop.Clear()
 
 	hr, _, _ := syscall.Syscall(
 		uintptr(v.VTable().Put),
@@ -225,7 +213,29 @@ func (v *IADs) Put(name string, val interface{}) error {
 		uintptr(unsafe.Pointer(bname)),
 		uintptr(unsafe.Pointer(&prop)))
 	if hr != 0 {
-		defer ole.VariantClear(&prop)
+		return convertHresultToError(hr)
+	}
+	return nil
+}
+
+// PutString sets the values of a string attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutString(name string, val string) error {
+	bname := ole.SysAllocStringLen(name)
+	if bname == nil {
+		return ole.NewError(ole.E_OUTOFMEMORY)
+	}
+	defer ole.SysFreeString(bname)
+	prop := ole.NewVariant(ole.VT_BSTR, int64(uintptr(unsafe.Pointer(ole.SysAllocStringLen(val)))))
+	defer prop.Clear()
+
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().Put),
+		3,
+		uintptr(unsafe.Pointer(v)),
+		uintptr(unsafe.Pointer(bname)),
+		uintptr(unsafe.Pointer(&prop)))
+	if hr != 0 {
 		return convertHresultToError(hr)
 	}
 	return nil

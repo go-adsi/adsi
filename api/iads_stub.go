@@ -54,9 +54,15 @@ func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
 }
 
-// Put sets the values of an attribute in the ADSI attribute cache. The value
-// must be commited with SetInfo to be made persistent.
-func (v *IADs) Put(name string, val interface{}) error {
+// PutInt sets the values of an int attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutInt(name string, val int) error {
+	return  ole.NewError(ole.E_NOTIMPL)
+}
+
+// PutString sets the values of a string attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutString(name string, val string) error {
 	return  ole.NewError(ole.E_NOTIMPL)
 }
 
