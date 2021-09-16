@@ -53,3 +53,14 @@ func (v *IADs) Get(name string) (prop *ole.VARIANT, err error) {
 func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
 }
+
+// Put sets the values of an attribute in the ADSI attribute cache. The value
+// must be commited with SetInfo to be made persistent.
+func (v *IADs) Put(name string, val interface{}) error {
+	return  ole.NewError(ole.E_NOTIMPL)
+}
+
+// SetInfo saves the cached property values of the ADSI object to the underlying directory store.
+func (v *IADs) SetInfo() error {
+	return  ole.NewError(ole.E_NOTIMPL)
+}

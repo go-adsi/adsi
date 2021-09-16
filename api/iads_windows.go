@@ -3,10 +3,15 @@
 package api
 
 import (
+	"errors"
 	"syscall"
 	"unsafe"
 
 	"github.com/go-ole/go-ole"
+)
+
+var (
+	ErrUnsupportedType = errors.New("unsupported type")
 )
 
 // Name retrieves the name of the object.
@@ -189,6 +194,51 @@ func (v *IADs) GetInfoEx(variant *ole.VARIANT) (err error) {
 		uintptr(unsafe.Pointer(v)),
 		uintptr(unsafe.Pointer(variant)),
 		0) // This is a reserved value: it must be included and must be zero
+	if hr != 0 {
+		return convertHresultToError(hr)
+	}
+	return nil
+}
+
+// Put sets the values of an attribute in the ADSI attribute cache. The value
+// must be commited with SetInfo to be made persistent.
+func (v *IADs) Put(name string, val interface{}) error {
+	bname := ole.SysAllocStringLen(name)
+	if bname == nil {
+		return ole.NewError(ole.E_OUTOFMEMORY)
+	}
+	defer ole.SysFreeString(bname)
+	var prop ole.VARIANT
+	switch vt := val.(type) {
+	case string:
+		prop = ole.NewVariant(ole.VT_BSTR, int64(uintptr(unsafe.Pointer(ole.SysAllocStringLen(vt)))))
+	case int:
+		prop = ole.NewVariant(ole.VT_I4, int64(vt))
+	default:
+		return ErrUnsupportedType
+	}
+
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().Put),
+		3,
+		uintptr(unsafe.Pointer(v)),
+		uintptr(unsafe.Pointer(bname)),
+		uintptr(unsafe.Pointer(&prop)))
+	if hr != 0 {
+		defer ole.VariantClear(&prop)
+		return convertHresultToError(hr)
+	}
+	return nil
+}
+
+// SetInfo saves the cached property values of the ADSI object to the underlying directory store.
+func (v *IADs) SetInfo() error {
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().SetInfo),
+		1,
+		uintptr(unsafe.Pointer(v)),
+		0,
+		0)
 	if hr != 0 {
 		return convertHresultToError(hr)
 	}

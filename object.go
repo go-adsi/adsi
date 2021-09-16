@@ -6,12 +6,12 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/go-adsi/adsi/api"
+	"github.com/go-adsi/adsi/comiid"
 	ole "github.com/go-ole/go-ole"
 	"github.com/google/uuid"
 	"github.com/scjalliance/comshim"
 	"github.com/scjalliance/comutil"
-	"github.com/go-adsi/adsi/api"
-	"github.com/go-adsi/adsi/comiid"
 )
 
 // ADSI Objects of LDAP:  https://msdn.microsoft.com/library/aa772208
@@ -497,6 +497,27 @@ func (o *object) AttrGUID(name string) (attr uuid.UUID, err error) {
 		attr = array[0]
 	}
 	return
+}
+
+// Put sets the values of an attribute in the ADSI attribute cache.
+func (o *object) Put(name string, val interface{}) error {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return ErrClosed
+	}
+	return o.iface.Put(name, val)
+}
+
+// SetInfo saves the cached property values of the ADSI object to the underlying
+// directory store.
+func (o *object) SetInfo() error {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return ErrClosed
+	}
+	return o.iface.SetInfo()
 }
 
 // ToContainer attempts to acquire a container interface for the object.
