@@ -499,14 +499,26 @@ func (o *object) AttrGUID(name string) (attr uuid.UUID, err error) {
 	return
 }
 
-// Put sets the values of an attribute in the ADSI attribute cache.
-func (o *object) Put(name string, val interface{}) error {
+// PutInt sets the values of an int attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (o *object) PutInt(name string, val int) error {
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.closed() {
 		return ErrClosed
 	}
-	return o.iface.Put(name, val)
+	return o.iface.PutInt(name, val)
+}
+
+// PutString sets the values of a string attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (o *object) PutString(name string, val string) error {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return ErrClosed
+	}
+	return o.iface.PutString(name, val)
 }
 
 // SetInfo saves the cached property values of the ADSI object to the underlying
