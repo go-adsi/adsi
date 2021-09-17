@@ -22,6 +22,16 @@ func (g *Group) closed() bool {
 	return (g.iface == nil)
 }
 
+// Add adds an ADSI object to an existing group.
+func (g *Group) Add(item string) (err error) {
+	g.m.Lock()
+	defer g.m.Unlock()
+	if g.closed() {
+		return ErrClosed
+	}
+	return g.iface.Add(item)
+}
+
 // Close will release resources consumed by the group. It should be
 // called when the group is no longer needed.
 func (g *Group) Close() {
@@ -61,4 +71,15 @@ func (g *Group) Members() (m *Members, err error) {
 	}
 	m = NewMembers(imembers)
 	return
+}
+
+// Remove removes the specified user object from this group. The operation
+// does not remove the group object itself even when there is no member remaining in the group.
+func (g *Group) Remove(item string) error {
+	g.m.Lock()
+	defer g.m.Unlock()
+	if g.closed() {
+		return ErrClosed
+	}
+	return g.iface.Remove(item)
 }
