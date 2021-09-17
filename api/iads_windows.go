@@ -194,3 +194,63 @@ func (v *IADs) GetInfoEx(variant *ole.VARIANT) (err error) {
 	}
 	return nil
 }
+
+// PutInt sets the values of an int attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutInt(name string, val int) error {
+	bname := ole.SysAllocStringLen(name)
+	if bname == nil {
+		return ole.NewError(ole.E_OUTOFMEMORY)
+	}
+	defer ole.SysFreeString(bname)
+	prop := ole.NewVariant(ole.VT_I4, int64(val))
+	defer prop.Clear()
+
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().Put),
+		3,
+		uintptr(unsafe.Pointer(v)),
+		uintptr(unsafe.Pointer(bname)),
+		uintptr(unsafe.Pointer(&prop)))
+	if hr != 0 {
+		return convertHresultToError(hr)
+	}
+	return nil
+}
+
+// PutString sets the values of a string attribute in the ADSI attribute
+// cache. The value must be commited with SetInfo to be made persistent.
+func (v *IADs) PutString(name string, val string) error {
+	bname := ole.SysAllocStringLen(name)
+	if bname == nil {
+		return ole.NewError(ole.E_OUTOFMEMORY)
+	}
+	defer ole.SysFreeString(bname)
+	prop := ole.NewVariant(ole.VT_BSTR, int64(uintptr(unsafe.Pointer(ole.SysAllocStringLen(val)))))
+	defer prop.Clear()
+
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().Put),
+		3,
+		uintptr(unsafe.Pointer(v)),
+		uintptr(unsafe.Pointer(bname)),
+		uintptr(unsafe.Pointer(&prop)))
+	if hr != 0 {
+		return convertHresultToError(hr)
+	}
+	return nil
+}
+
+// SetInfo saves the cached property values of the ADSI object to the underlying directory store.
+func (v *IADs) SetInfo() error {
+	hr, _, _ := syscall.Syscall(
+		uintptr(v.VTable().SetInfo),
+		1,
+		uintptr(unsafe.Pointer(v)),
+		0,
+		0)
+	if hr != 0 {
+		return convertHresultToError(hr)
+	}
+	return nil
+}
