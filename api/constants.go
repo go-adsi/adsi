@@ -49,6 +49,35 @@ const (
 	ADS_AUTH_RESERVED         = 0x80000000
 )
 
+// The ADS_NAME_INITTYPE_ENUM enumeration specifies the types of initialization to perform
+// on a NameTranslate object. It is used in the IADsNameTranslate interface.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/api/iads/ne-iads-ads_name_inittype_enum
+const (
+	ADS_NAME_INITTYPE_DOMAIN uint32 = iota + 1
+	ADS_NAME_INITTYPE_SERVER
+	ADS_NAME_INITTYPE_GC
+)
+
+//The ADS_NAME_TYPE_ENUM enumeration specifies the formats used for representing distinguished
+// names. It is used by the IADsNameTranslate interface to convert the format of a distinguished name.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/api/iads/ne-iads-ads_name_type_enum
+const (
+	ADS_NAME_TYPE_1779 uint32 = iota + 1
+	ADS_NAME_TYPE_CANONICAL
+	ADS_NAME_TYPE_NT4
+	ADS_NAME_TYPE_DISPLAY
+	ADS_NAME_TYPE_DOMAIN_SIMPLE
+	ADS_NAME_TYPE_ENTERPRISE_SIMPLE
+	ADS_NAME_TYPE_GUID
+	ADS_NAME_TYPE_UNKNOWN
+	ADS_NAME_TYPE_USER_PRINCIPAL_NAME
+	ADS_NAME_TYPE_CANONICAL_EX
+	ADS_NAME_TYPE_SERVICE_PRINCIPAL_NAME
+	ADS_NAME_TYPE_SID_OR_SID_HISTORY_NAME
+)
+
 var (
 	ErrInvalidNamespace = errors.New("The provided name or namespace is invalid.")
 	ErrAccessDenied     = errors.New("Access denied.")
