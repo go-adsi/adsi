@@ -1,8 +1,8 @@
 package adsi
 
 import (
-	"github.com/scjalliance/comshim"
 	"github.com/go-adsi/adsi/api"
+	"github.com/scjalliance/comshim"
 )
 
 // User provides access to Active Directory users.
@@ -33,4 +33,34 @@ func (u *User) Close() {
 	u.iface.Release()
 	u.object.iface = nil
 	u.iface = nil
+}
+
+// AccountDisabled retrieves the disablement status of a user account.
+func (u *User) AccountDisabled() (disabled bool, err error) {
+	u.m.Lock()
+	defer u.m.Unlock()
+	if u.closed() {
+		return false, ErrClosed
+	}
+	return u.iface.AccountDisabled()
+}
+
+// SetAccountDisabled sets an account as disabled.
+func (u *User) SetAccountDisabled(val bool) (err error) {
+	u.m.Lock()
+	defer u.m.Unlock()
+	if u.closed() {
+		return ErrClosed
+	}
+	return u.iface.SetAccountDisabled(val)
+}
+
+// FullName returns the user's FullName property.
+func (u *User) FullName() (string, error) {
+	u.m.Lock()
+	defer u.m.Unlock()
+	if u.closed() {
+		return "", ErrClosed
+	}
+	return u.iface.FullName()
 }

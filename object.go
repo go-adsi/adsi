@@ -579,3 +579,19 @@ func (o *object) ToGroup() (g *Group, err error) {
 	g = NewGroup(iface)
 	return
 }
+
+// ToUser attempts to acquire a user interface for the object.
+func (o *object) ToUser() (u *User, err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	if o.closed() {
+		return nil, ErrClosed
+	}
+	idispatch, err := o.iface.QueryInterface(comutil.GUID(comiid.IADsUser))
+	if err != nil {
+		return
+	}
+	iface := (*api.IADsUser)(unsafe.Pointer(idispatch))
+	u = NewUser(iface)
+	return
+}
