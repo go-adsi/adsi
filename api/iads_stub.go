@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package api
@@ -19,7 +20,7 @@ func (v *IADs) Class() (class string, err error) {
 
 // GUID retrieves the GUID of the object as a string.
 func (v *IADs) GUID() (guid uuid.UUID, err error) {
-	return "", ole.NewError(ole.E_NOTIMPL)
+	return uuid.New(), ole.NewError(ole.E_NOTIMPL)
 }
 
 // AdsPath retrieves the fully qualified path of the object.
@@ -57,16 +58,16 @@ func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 // PutInt sets the values of an int attribute in the ADSI attribute
 // cache. The value must be commited with SetInfo to be made persistent.
 func (v *IADs) PutInt(name string, val int) error {
-	return  ole.NewError(ole.E_NOTIMPL)
+	return ole.NewError(ole.E_NOTIMPL)
 }
 
 // PutString sets the values of a string attribute in the ADSI attribute
 // cache. The value must be commited with SetInfo to be made persistent.
 func (v *IADs) PutString(name string, val string) error {
-	return  ole.NewError(ole.E_NOTIMPL)
+	return ole.NewError(ole.E_NOTIMPL)
 }
 
 // SetInfo saves the cached property values of the ADSI object to the underlying directory store.
 func (v *IADs) SetInfo() error {
-	return  ole.NewError(ole.E_NOTIMPL)
+	return ole.NewError(ole.E_NOTIMPL)
 }
