@@ -5,7 +5,6 @@ package api
 
 import (
 	"github.com/go-ole/go-ole"
-	"github.com/google/uuid"
 )
 
 // Name retrieves the name of the object.
@@ -19,8 +18,8 @@ func (v *IADs) Class() (class string, err error) {
 }
 
 // GUID retrieves the GUID of the object as a string.
-func (v *IADs) GUID() (guid uuid.UUID, err error) {
-	return uuid.New(), ole.NewError(ole.E_NOTIMPL)
+func (v *IADs) GUID() (guid string, err error) {
+	return "", ole.NewError(ole.E_NOTIMPL)
 }
 
 // AdsPath retrieves the fully qualified path of the object.
@@ -53,6 +52,12 @@ func (v *IADs) Get(name string) (prop *ole.VARIANT, err error) {
 // VARIANT array with one member.
 func (v *IADs) GetEx(name string) (prop *ole.VARIANT, err error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
+}
+
+// GetInfoEx loads the given set of property names into the cache. The given
+// variant must be a safe array of null-terminated unicode strings.
+func (v *IADs) GetInfoEx(variant *ole.VARIANT) (err error) {
+	return ole.NewError(ole.E_NOTIMPL)
 }
 
 // PutInt sets the values of an int attribute in the ADSI attribute
