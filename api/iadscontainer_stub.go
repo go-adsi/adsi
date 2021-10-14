@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package api
@@ -23,6 +24,12 @@ func (v *IADsContainer) NewEnum() (enum *ole.IUnknown, err error) {
 
 // Filter retrieves the filter for the container.
 func (v *IADsContainer) Filter() (variant *ole.VARIANT, err error) {
+	return nil, ole.NewError(ole.E_NOTIMPL)
+}
+
+// GetObject returns a descendant object with the given class and relative
+// name.
+func (v *IADsContainer) GetObject(class, name string) (obj *ole.IDispatch, err error) {
 	return nil, ole.NewError(ole.E_NOTIMPL)
 }
 
