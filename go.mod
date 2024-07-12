@@ -1,12 +1,12 @@
 module github.com/go-adsi/adsi
 
-go 1.21
+go 1.22
 
 require (
 	github.com/go-ole/go-ole v1.3.0
-	github.com/google/uuid v1.4.0
-	github.com/scjalliance/comshim v0.0.0-20231116235529-bbacf79a4691
-	github.com/scjalliance/comutil v0.0.0-20231116235742-a19f1d833b6b
+	github.com/google/uuid v1.6.0
+	github.com/scjalliance/comshim v0.0.0-20240712181150-e070933cb68e
+	github.com/scjalliance/comutil v0.0.0-20240712181340-772427873823
 )
 
-require golang.org/x/sys v0.14.0 // indirect
+require golang.org/x/sys v0.22.0 // indirect
