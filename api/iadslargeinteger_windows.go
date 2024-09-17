@@ -46,5 +46,5 @@ func (v *IADsLargeInteger) Value() (value int64, err error) {
 	if err != nil {
 		return
 	}
-	return (int64(upper) << 32) | int64(lower), nil
+	return (int64(uint32(upper)) << 32) | int64(uint32(lower)), nil
 }
